@@ -9,8 +9,11 @@ abstract final class Formatters {
   );
 
   static final DateFormat _date = DateFormat('EEE d MMM, yyyy', 'es');
+  static final DateFormat _time = DateFormat('h:mm a', 'es');
 
   static String currency(double value) => _currency.format(value);
 
   static String date(DateTime value) => _date.format(value);
+
+  static String time(DateTime value) => _time.format(value).toUpperCase();
 }

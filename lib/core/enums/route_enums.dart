@@ -26,20 +26,29 @@ enum RouteStatus {
 
   /// Human readable label used in the UI.
   String get label => switch (this) {
-        RouteStatus.enBase => 'En base',
-        RouteStatus.rutaVerificada => 'Ruta verificada',
-        RouteStatus.rutaIniciada => 'Ruta iniciada',
-        RouteStatus.rutaPorFinalizar => 'Por finalizar',
-        RouteStatus.finalizada => 'Finalizada',
-      };
+    RouteStatus.enBase => 'En base',
+    RouteStatus.rutaVerificada => 'Ruta verificada',
+    RouteStatus.rutaIniciada => 'Ruta iniciada',
+    RouteStatus.rutaPorFinalizar => 'Por finalizar',
+    RouteStatus.finalizada => 'Finalizada',
+  };
+
+  /// Technical UPPER_SNAKE code shown in status pills (e.g. `RUTA_INICIADA`).
+  String get code => switch (this) {
+    RouteStatus.enBase => 'EN_BASE',
+    RouteStatus.rutaVerificada => 'RUTA_VERIFICADA',
+    RouteStatus.rutaIniciada => 'RUTA_INICIADA',
+    RouteStatus.rutaPorFinalizar => 'RUTA_POR_FINALIZAR',
+    RouteStatus.finalizada => 'FINALIZADA',
+  };
 
   /// Stable key for persistence (decoupled from enum index ordering).
   String get key => name;
 
   static RouteStatus fromKey(String? key) => RouteStatus.values.firstWhere(
-        (e) => e.name == key,
-        orElse: () => RouteStatus.enBase,
-      );
+    (e) => e.name == key,
+    orElse: () => RouteStatus.enBase,
+  );
 }
 
 /// Lifecycle of an individual sede (branch/stop) within the route.
@@ -49,17 +58,17 @@ enum SedeStatus {
   completed;
 
   String get label => switch (this) {
-        SedeStatus.pending => 'Pendiente',
-        SedeStatus.inProcess => 'En proceso',
-        SedeStatus.completed => 'Completada',
-      };
+    SedeStatus.pending => 'Pendiente',
+    SedeStatus.inProcess => 'En proceso',
+    SedeStatus.completed => 'Completada',
+  };
 
   String get key => name;
 
   static SedeStatus fromKey(String? key) => SedeStatus.values.firstWhere(
-        (e) => e.name == key,
-        orElse: () => SedeStatus.pending,
-      );
+    (e) => e.name == key,
+    orElse: () => SedeStatus.pending,
+  );
 }
 
 /// Type of operation performed at a sede.
@@ -74,10 +83,10 @@ enum SedeOperationType {
   mixto;
 
   String get label => switch (this) {
-        SedeOperationType.entrega => 'Entrega',
-        SedeOperationType.retiro => 'Retiro',
-        SedeOperationType.mixto => 'Mixto',
-      };
+    SedeOperationType.entrega => 'Entrega',
+    SedeOperationType.retiro => 'Retiro',
+    SedeOperationType.mixto => 'Mixto',
+  };
 
   bool get allowsDelivery =>
       this == SedeOperationType.entrega || this == SedeOperationType.mixto;
@@ -103,14 +112,14 @@ enum PackageType {
   retiro;
 
   String get label => switch (this) {
-        PackageType.entrega => 'Entrega',
-        PackageType.retiro => 'Retiro',
-      };
+    PackageType.entrega => 'Entrega',
+    PackageType.retiro => 'Retiro',
+  };
 
   String get key => name;
 
   static PackageType fromKey(String? key) => PackageType.values.firstWhere(
-        (e) => e.name == key,
-        orElse: () => PackageType.entrega,
-      );
+    (e) => e.name == key,
+    orElse: () => PackageType.entrega,
+  );
 }

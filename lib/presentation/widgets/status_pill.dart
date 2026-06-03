@@ -9,78 +9,80 @@ class StatusPill extends StatelessWidget {
   final Color color;
   final IconData? icon;
 
+  /// When true, renders a leading colored dot and monospace, letter-spaced
+  /// text (technical status style, e.g. `RUTA_INICIADA`).
+  final bool dot;
+
   const StatusPill({
     super.key,
     required this.label,
     required this.color,
     this.icon,
+    this.dot = false,
   });
 
   /// Factory mapping a [SedeStatus] to its branded color/icon.
   factory StatusPill.sede(SedeStatus status) {
     return switch (status) {
       SedeStatus.pending => const StatusPill(
-          label: 'Pendiente',
-          color: KeeperColors.warning,
-          icon: Icons.schedule_rounded,
-        ),
+        label: 'Pendiente',
+        color: KeeperColors.warning,
+        icon: Icons.schedule_rounded,
+      ),
       SedeStatus.inProcess => const StatusPill(
-          label: 'En proceso',
-          color: KeeperColors.primaryBright,
-          icon: Icons.bolt_rounded,
-        ),
+        label: 'En proceso',
+        color: KeeperColors.primaryBright,
+        icon: Icons.bolt_rounded,
+      ),
       SedeStatus.completed => const StatusPill(
-          label: 'Completada',
-          color: KeeperColors.success,
-          icon: Icons.check_circle_rounded,
-        ),
+        label: 'Completada',
+        color: KeeperColors.success,
+        icon: Icons.check_circle_rounded,
+      ),
     };
   }
 
-  /// Factory mapping a [RouteStatus] to its branded color/icon.
+  /// Factory mapping a [RouteStatus] to a technical dot-style pill
+  /// (e.g. `EN_BASE`, `RUTA_INICIADA`).
   factory StatusPill.route(RouteStatus status) {
-    return switch (status) {
-      RouteStatus.enBase => StatusPill(
-          label: status.label,
-          color: KeeperColors.textSecondary,
-          icon: Icons.home_work_rounded,
-        ),
-      RouteStatus.rutaVerificada => StatusPill(
-          label: status.label,
-          color: KeeperColors.primaryBright,
-          icon: Icons.fact_check_rounded,
-        ),
-      RouteStatus.rutaIniciada => StatusPill(
-          label: status.label,
-          color: KeeperColors.success,
-          icon: Icons.local_shipping_rounded,
-        ),
-      RouteStatus.rutaPorFinalizar => StatusPill(
-          label: status.label,
-          color: KeeperColors.warning,
-          icon: Icons.flag_rounded,
-        ),
-      RouteStatus.finalizada => StatusPill(
-          label: status.label,
-          color: KeeperColors.success,
-          icon: Icons.task_alt_rounded,
-        ),
+    final color = switch (status) {
+      RouteStatus.enBase => KeeperColors.success,
+      RouteStatus.rutaVerificada => KeeperColors.primaryBright,
+      RouteStatus.rutaIniciada => KeeperColors.primaryBright,
+      RouteStatus.rutaPorFinalizar => KeeperColors.warning,
+      RouteStatus.finalizada => KeeperColors.success,
     };
+    return StatusPill(label: status.code, color: color, dot: true);
   }
 
   @override
   Widget build(BuildContext context) {
     return Container(
-      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 6),
+      padding: EdgeInsets.symmetric(horizontal: dot ? 12 : 10, vertical: 6),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.14),
+        color: dot ? KeeperColors.surfaceHigh : color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
-        border: Border.all(color: color.withValues(alpha: 0.5)),
+        border: Border.all(
+          color: dot ? KeeperColors.border : color.withValues(alpha: 0.5),
+        ),
       ),
       child: Row(
         mainAxisSize: MainAxisSize.min,
         children: [
-          if (icon != null) ...[
+          if (dot) ...[
+            Container(
+              width: 8,
+              height: 8,
+              decoration: BoxDecoration(
+                shape: BoxShape.circle,
+                color: color,
+                boxShadow: [
+                  BoxShadow(color: color.withValues(alpha: 0.7), blurRadius: 6),
+                ],
+              ),
+            ),
+            const SizedBox(width: 7),
+          ] else if (icon != null) ...[
             Icon(icon, size: 14, color: color),
             const SizedBox(width: 5),
           ],
@@ -88,8 +90,10 @@ class StatusPill extends StatelessWidget {
             label,
             style: TextStyle(
               color: color,
-              fontSize: 12,
+              fontSize: dot ? 11 : 12,
               fontWeight: FontWeight.w700,
+              letterSpacing: dot ? 0.8 : 0,
+              fontFamily: dot ? 'monospace' : null,
             ),
           ),
         ],

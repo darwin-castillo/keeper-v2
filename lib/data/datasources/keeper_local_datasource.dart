@@ -7,6 +7,7 @@ import 'package:hive_flutter/hive_flutter.dart';
 class KeeperLocalDataSource {
   static const String _routeBoxName = 'keeper_routes';
   static const String _activeRouteKey = 'active_route';
+  static const String _seedVersionKey = 'seed_version';
 
   Box<dynamic>? _routeBox;
 
@@ -16,8 +17,7 @@ class KeeperLocalDataSource {
     await Hive.openBox<dynamic>(_routeBoxName);
   }
 
-  Box<dynamic> get _box =>
-      _routeBox ??= Hive.box<dynamic>(_routeBoxName);
+  Box<dynamic> get _box => _routeBox ??= Hive.box<dynamic>(_routeBoxName);
 
   /// Returns the persisted route map, or null if none stored.
   Map<String, dynamic>? readActiveRoute() {
@@ -32,5 +32,13 @@ class KeeperLocalDataSource {
 
   Future<void> deleteActiveRoute() async {
     await _box.delete(_activeRouteKey);
+  }
+
+  /// Seed schema version persisted alongside the route. Used to invalidate a
+  /// stale demo route when the seed data structure changes.
+  int? readSeedVersion() => _box.get(_seedVersionKey) as int?;
+
+  Future<void> writeSeedVersion(int version) async {
+    await _box.put(_seedVersionKey, version);
   }
 }

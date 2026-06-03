@@ -3,10 +3,13 @@ import 'package:provider/provider.dart';
 
 import '../../core/enums/route_enums.dart';
 import '../../core/theme/keeper_colors.dart';
+import '../../core/utils/formatters.dart';
 import '../../core/utils/map_launcher.dart';
 import '../../core/utils/snack.dart';
+import '../../data/models/route_model.dart';
 import '../../data/models/sede_model.dart';
 import '../providers/route_provider.dart';
+import '../widgets/keeper_logo.dart';
 import '../widgets/status_pill.dart';
 import 'sede_operation_screen.dart';
 
@@ -34,32 +37,92 @@ class RouteStatusScreen extends StatelessWidget {
     final route = provider.route!;
     final sedes = route.sedes;
     final currentIndex = route.currentSedeIndex;
+    final current = route.currentSede;
 
     return Scaffold(
-      appBar: AppBar(title: const Text('Estado de la ruta')),
-      body: ListView.builder(
-        padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
-        itemCount: sedes.length,
-        itemBuilder: (context, i) {
-          final sede = sedes[i];
-          final isCurrent = i == currentIndex &&
-              provider.status == RouteStatus.rutaIniciada;
-          final isLast = i == sedes.length - 1;
-          return _TimelineNode(
-            sede: sede,
-            position: i + 1,
-            isCurrent: isCurrent,
-            isLast: isLast,
-            onNavigate: () => _navigate(context, sede),
-            onOpen: isCurrent
-                ? () => Navigator.of(context).push(
-                      MaterialPageRoute(
-                        builder: (_) => const SedeOperationScreen(),
-                      ),
-                    )
-                : null,
-          );
-        },
+      appBar: AppBar(
+        titleSpacing: 16,
+        title: const KeeperWordmark(),
+        actions: [
+          Padding(
+            padding: const EdgeInsets.only(right: 12),
+            child: Center(child: StatusPill.route(route.status)),
+          ),
+        ],
+      ),
+      body: Column(
+        children: [
+          _TimelineHeader(route: route),
+          Expanded(
+            child: ListView.builder(
+              padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
+              itemCount: sedes.length,
+              itemBuilder: (context, i) {
+                final sede = sedes[i];
+                final isCurrent =
+                    i == currentIndex &&
+                    provider.status == RouteStatus.rutaIniciada;
+                final isLast = i == sedes.length - 1;
+                return _TimelineNode(
+                  sede: sede,
+                  position: i + 1,
+                  isCurrent: isCurrent,
+                  isLast: isLast,
+                  onNavigate: () => _navigate(context, sede),
+                  onOpen: isCurrent
+                      ? () => Navigator.of(context).push(
+                          MaterialPageRoute(
+                            builder: (_) => const SedeOperationScreen(),
+                          ),
+                        )
+                      : null,
+                );
+              },
+            ),
+          ),
+        ],
+      ),
+      bottomNavigationBar: current == null
+          ? null
+          : SafeArea(
+              child: Padding(
+                padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+                child: OutlinedButton.icon(
+                  onPressed: () => _navigate(context, current),
+                  icon: const Icon(Icons.map_rounded, size: 20),
+                  label: const Text('VER EN MAPA'),
+                ),
+              ),
+            ),
+    );
+  }
+}
+
+/// Header showing the route title, status and progress.
+class _TimelineHeader extends StatelessWidget {
+  final RouteModel route;
+  const _TimelineHeader({required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = route.sedes.length;
+    final done = route.completedSedesCount;
+    final pct = total == 0 ? 0 : ((done / total) * 100).round();
+    return Padding(
+      padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Text(
+            'Ruta actual',
+            style: Theme.of(context).textTheme.headlineMedium,
+          ),
+          const SizedBox(height: 4),
+          Text(
+            '$total paradas en total  ·  Progreso: $pct%',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+        ],
       ),
     );
   }
@@ -83,12 +146,15 @@ class _TimelineNode extends StatelessWidget {
     required this.onOpen,
   });
 
+  /// Future, not-yet-active stop: rendered dimmed.
+  bool get _dim => sede.status == SedeStatus.pending && !isCurrent;
+
   Color get _nodeColor => switch (sede.status) {
-        SedeStatus.completed => KeeperColors.success,
-        SedeStatus.inProcess => KeeperColors.primaryBright,
-        SedeStatus.pending =>
-          isCurrent ? KeeperColors.warning : KeeperColors.textDisabled,
-      };
+    SedeStatus.completed => KeeperColors.success,
+    SedeStatus.inProcess => KeeperColors.primaryBright,
+    SedeStatus.pending =>
+      isCurrent ? KeeperColors.warning : KeeperColors.textDisabled,
+  };
 
   @override
   Widget build(BuildContext context) {
@@ -111,21 +177,23 @@ class _TimelineNode extends StatelessWidget {
                 ),
                 alignment: Alignment.center,
                 child: sede.status == SedeStatus.completed
-                    ? const Icon(Icons.check_rounded,
-                        color: Colors.white, size: 20)
-                    : Text('$position',
+                    ? const Icon(
+                        Icons.check_rounded,
+                        color: Colors.white,
+                        size: 20,
+                      )
+                    : Text(
+                        '$position',
                         style: TextStyle(
                           color: _nodeColor,
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
-                        )),
+                        ),
+                      ),
               ),
               if (!isLast)
                 Expanded(
-                  child: Container(
-                    width: 2,
-                    color: KeeperColors.border,
-                  ),
+                  child: Container(width: 2, color: KeeperColors.border),
                 ),
             ],
           ),
@@ -160,70 +228,58 @@ class _TimelineNode extends StatelessWidget {
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        Expanded(
-                          child: Text(sede.name,
-                              style:
-                                  Theme.of(context).textTheme.titleMedium),
-                        ),
-                        StatusPill.sede(sede.status),
-                      ],
+                    _NodeStatusLine(
+                      position: position,
+                      sede: sede,
+                      isCurrent: isCurrent,
+                    ),
+                    const SizedBox(height: 8),
+                    Text(
+                      sede.name,
+                      style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                        color: _dim
+                            ? KeeperColors.textSecondary
+                            : KeeperColors.textPrimary,
+                      ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(Icons.place_rounded,
-                            size: 14, color: KeeperColors.textSecondary),
+                        const Icon(
+                          Icons.place_rounded,
+                          size: 14,
+                          color: KeeperColors.textSecondary,
+                        ),
                         const SizedBox(width: 4),
                         Expanded(
-                          child: Text(sede.address,
-                              maxLines: 1,
-                              overflow: TextOverflow.ellipsis,
-                              style:
-                                  Theme.of(context).textTheme.bodyMedium),
+                          child: Text(
+                            sede.address,
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: Theme.of(context).textTheme.bodyMedium,
+                          ),
                         ),
-                      ],
-                    ),
-                    const SizedBox(height: 6),
-                    Row(
-                      children: [
+                        const SizedBox(width: 8),
                         _OpTag(sede.operationType),
-                        if (isCurrent) ...[
-                          const SizedBox(width: 8),
-                          const Text('Siguiente parada',
-                              style: TextStyle(
-                                color: KeeperColors.warning,
-                                fontWeight: FontWeight.w700,
-                                fontSize: 12,
-                              )),
-                        ],
                       ],
                     ),
                     if (isCurrent) ...[
                       const SizedBox(height: 14),
-                      Row(
-                        children: [
-                          Expanded(
-                            child: OutlinedButton.icon(
-                              onPressed: onNavigate,
-                              icon: const Icon(Icons.navigation_rounded,
-                                  size: 18),
-                              label: const Text('Mapa'),
-                            ),
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: ElevatedButton.icon(
-                              onPressed: onOpen,
-                              style: ElevatedButton.styleFrom(
-                                minimumSize: const Size.fromHeight(52),
-                              ),
-                              icon: const Icon(Icons.login_rounded, size: 18),
-                              label: const Text('Operar'),
-                            ),
-                          ),
-                        ],
+                      ElevatedButton.icon(
+                        onPressed: onNavigate,
+                        style: ElevatedButton.styleFrom(
+                          backgroundColor: KeeperColors.warning,
+                          foregroundColor: const Color(0xFF2A1700),
+                          minimumSize: const Size.fromHeight(48),
+                        ),
+                        icon: const Icon(Icons.navigation_rounded, size: 18),
+                        label: const Text('NAVEGAR'),
+                      ),
+                      const SizedBox(height: 10),
+                      OutlinedButton.icon(
+                        onPressed: onOpen,
+                        icon: const Icon(Icons.login_rounded, size: 18),
+                        label: const Text('Operar sede'),
                       ),
                     ],
                   ],
@@ -233,6 +289,59 @@ class _TimelineNode extends StatelessWidget {
           ),
         ],
       ),
+    );
+  }
+}
+
+/// Card header line: `01 · COMPLETADA` + time, or the NEXT-STOP banner.
+class _NodeStatusLine extends StatelessWidget {
+  final int position;
+  final SedeModel sede;
+  final bool isCurrent;
+  const _NodeStatusLine({
+    required this.position,
+    required this.sede,
+    required this.isCurrent,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final pos = position.toString().padLeft(2, '0');
+    final (leftText, leftColor) = switch (sede.status) {
+      SedeStatus.completed => ('$pos · COMPLETADA', KeeperColors.success),
+      SedeStatus.inProcess => ('$pos · EN PROCESO', KeeperColors.primaryBright),
+      SedeStatus.pending =>
+        isCurrent
+            ? ('SIGUIENTE PARADA', KeeperColors.warning)
+            : ('$pos · PENDIENTE', KeeperColors.textDisabled),
+    };
+    final rightText = isCurrent
+        ? 'PENDIENTE'
+        : (sede.checkedInAt != null ? Formatters.time(sede.checkedInAt!) : '');
+
+    return Row(
+      children: [
+        Expanded(
+          child: Text(
+            leftText,
+            style: TextStyle(
+              color: leftColor,
+              fontSize: 12,
+              fontWeight: FontWeight.w800,
+              letterSpacing: 0.6,
+            ),
+          ),
+        ),
+        if (rightText.isNotEmpty)
+          Text(
+            rightText,
+            style: const TextStyle(
+              color: KeeperColors.textSecondary,
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+            ),
+          ),
+      ],
     );
   }
 }
@@ -250,13 +359,15 @@ class _OpTag extends StatelessWidget {
         borderRadius: BorderRadius.circular(6),
         border: Border.all(color: KeeperColors.border),
       ),
-      child: Text(type.label.toUpperCase(),
-          style: const TextStyle(
-            color: KeeperColors.textSecondary,
-            fontSize: 11,
-            fontWeight: FontWeight.w700,
-            letterSpacing: 0.5,
-          )),
+      child: Text(
+        type.label.toUpperCase(),
+        style: const TextStyle(
+          color: KeeperColors.textSecondary,
+          fontSize: 11,
+          fontWeight: FontWeight.w700,
+          letterSpacing: 0.5,
+        ),
+      ),
     );
   }
 }

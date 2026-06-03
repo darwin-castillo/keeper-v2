@@ -39,8 +39,8 @@ En el primer arranque se siembra una ruta de ejemplo. Códigos esperados:
 
 - QR salida de base: `KEEPER-BASE-EXIT`
 - QR cierre en base: `KEEPER-BASE-CLOSE`
-- QR sedes: `KEEPER-SEDE-1`, `KEEPER-SEDE-2`, `KEEPER-SEDE-3`
-- Códigos de barras de paquetes: `7501234500101`, `7501234500102`, `7501234500201`
+- QR sedes: `KEEPER-SEDE-1` … `KEEPER-SEDE-6`
+- Códigos de paquetes (entrega): `PK-1001`, `PK-1002`, `PK-3204`, `PK-3210`, `PK-9912`, `PK-9945`, `PK-1052`, `PK-7781`, `PK-8830`
 
 En las pantallas de captura QR puedes usar **"Ingresar código manualmente"** para probar sin cámara (emulador).
 

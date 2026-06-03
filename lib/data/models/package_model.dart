@@ -18,6 +18,9 @@ class PackageModel {
   /// Monetary value associated with the package.
   final double amount;
 
+  /// Physical location reference at the sede (e.g. `Bin A-12`, `Counter`).
+  final String binLocation;
+
   /// Whether this package is a delivery (drop-off) or a pickup.
   final PackageType type;
 
@@ -43,6 +46,7 @@ class PackageModel {
     required this.amount,
     required this.type,
     required this.sedeId,
+    this.binLocation = '',
     this.verifiedInBase = false,
     this.isScanned = false,
     this.scannedAt,
@@ -52,6 +56,7 @@ class PackageModel {
   PackageModel copyWith({
     String? description,
     double? amount,
+    String? binLocation,
     bool? verifiedInBase,
     bool? isScanned,
     DateTime? scannedAt,
@@ -64,6 +69,7 @@ class PackageModel {
       amount: amount ?? this.amount,
       type: type,
       sedeId: sedeId,
+      binLocation: binLocation ?? this.binLocation,
       verifiedInBase: verifiedInBase ?? this.verifiedInBase,
       isScanned: isScanned ?? this.isScanned,
       scannedAt: scannedAt ?? this.scannedAt,
@@ -72,32 +78,34 @@ class PackageModel {
   }
 
   Map<String, dynamic> toMap() => {
-        'id': id,
-        'code': code,
-        'description': description,
-        'amount': amount,
-        'type': type.key,
-        'sedeId': sedeId,
-        'verifiedInBase': verifiedInBase,
-        'isScanned': isScanned,
-        'scannedAt': scannedAt?.toIso8601String(),
-        'pendingSync': pendingSync,
-      };
+    'id': id,
+    'code': code,
+    'description': description,
+    'amount': amount,
+    'binLocation': binLocation,
+    'type': type.key,
+    'sedeId': sedeId,
+    'verifiedInBase': verifiedInBase,
+    'isScanned': isScanned,
+    'scannedAt': scannedAt?.toIso8601String(),
+    'pendingSync': pendingSync,
+  };
 
   factory PackageModel.fromMap(Map<String, dynamic> map) => PackageModel(
-        id: map['id'] as String,
-        code: map['code'] as String,
-        description: (map['description'] as String?) ?? '',
-        amount: (map['amount'] as num?)?.toDouble() ?? 0,
-        type: PackageType.fromKey(map['type'] as String?),
-        sedeId: (map['sedeId'] as String?) ?? '',
-        verifiedInBase: (map['verifiedInBase'] as bool?) ?? false,
-        isScanned: (map['isScanned'] as bool?) ?? false,
-        scannedAt: map['scannedAt'] == null
-            ? null
-            : DateTime.tryParse(map['scannedAt'] as String),
-        pendingSync: (map['pendingSync'] as bool?) ?? false,
-      );
+    id: map['id'] as String,
+    code: map['code'] as String,
+    description: (map['description'] as String?) ?? '',
+    amount: (map['amount'] as num?)?.toDouble() ?? 0,
+    binLocation: (map['binLocation'] as String?) ?? '',
+    type: PackageType.fromKey(map['type'] as String?),
+    sedeId: (map['sedeId'] as String?) ?? '',
+    verifiedInBase: (map['verifiedInBase'] as bool?) ?? false,
+    isScanned: (map['isScanned'] as bool?) ?? false,
+    scannedAt: map['scannedAt'] == null
+        ? null
+        : DateTime.tryParse(map['scannedAt'] as String),
+    pendingSync: (map['pendingSync'] as bool?) ?? false,
+  );
 
   @override
   bool operator ==(Object other) => other is PackageModel && other.id == id;

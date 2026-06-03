@@ -9,8 +9,8 @@ import 'data/repositories/route_repository_impl.dart';
 import 'domain/repositories/route_repository.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/route_provider.dart';
-import 'presentation/screens/dashboard_screen.dart';
 import 'presentation/screens/login_screen.dart';
+import 'presentation/screens/main_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
@@ -59,7 +59,7 @@ class _Root extends StatelessWidget {
     );
     return AnimatedSwitcher(
       duration: const Duration(milliseconds: 300),
-      child: isAuthenticated ? const DashboardScreen() : const LoginScreen(),
+      child: isAuthenticated ? const MainShell() : const LoginScreen(),
     );
   }
 }

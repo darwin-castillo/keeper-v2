@@ -13,8 +13,9 @@ import 'finalize_route_screen.dart';
 import 'route_status_screen.dart';
 import 'start_route_screen.dart';
 
-/// Main dashboard. Surfaces the route summary and a single, prominent
-/// primary action whose label/target changes with the [RouteStatus].
+/// Main dashboard (Manifiesto · base). Mirrors the Keeper "Dashboard (Base)"
+/// design: operator session header, active manifest card, route statistics
+/// and a single prominent CTA gated by the current [RouteStatus].
 class DashboardScreen extends StatelessWidget {
   const DashboardScreen({super.key});
 
@@ -27,12 +28,17 @@ class DashboardScreen extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         titleSpacing: 16,
-        title: const KeeperLogo(size: 32),
+        title: const KeeperWordmark(),
         actions: [
+          if (route != null)
+            Padding(
+              padding: const EdgeInsets.only(right: 8),
+              child: Center(child: StatusPill.route(route.status)),
+            ),
           IconButton(
-            tooltip: 'Cerrar sesión',
-            icon: const Icon(Icons.logout_rounded),
-            onPressed: () => auth.logout(),
+            tooltip: 'Recargar ruta',
+            icon: const Icon(Icons.route_rounded),
+            onPressed: () => provider.loadRoute(auth.driverId ?? ''),
           ),
           const SizedBox(width: 4),
         ],
@@ -42,23 +48,26 @@ class DashboardScreen extends StatelessWidget {
           : RefreshIndicator(
               onRefresh: () => provider.loadRoute(auth.driverId ?? ''),
               child: ListView(
-                padding: const EdgeInsets.fromLTRB(16, 8, 16, 120),
+                padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
+                  const _SectionLabel('Sesión de operador'),
+                  const SizedBox(height: 6),
                   Text(
-                    'Hola, ${auth.driverName ?? 'Operador'}',
+                    'Bienvenido, ${auth.driverName ?? 'Operador'}',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
-                  const SizedBox(height: 4),
-                  Text(
-                    'Resumen de tu ruta de hoy',
-                    style: Theme.of(context).textTheme.bodyMedium,
+                  const SizedBox(height: 22),
+                  _ActiveManifestCard(provider: provider),
+                  const SizedBox(height: 24),
+                  const _SectionLabel('Estadísticas de ruta'),
+                  const SizedBox(height: 12),
+                  _TotalStopsCard(provider: provider),
+                  const SizedBox(height: 12),
+                  _VerifiedPackagesCard(provider: provider),
+                  const SizedBox(height: 16),
+                  const _InfoNote(
+                    'Se requiere verificación de carga antes de iniciar la ruta.',
                   ),
-                  const SizedBox(height: 20),
-                  _RouteSummaryCard(provider: provider),
-                  const SizedBox(height: 14),
-                  _StatsRow(provider: provider),
-                  const SizedBox(height: 14),
-                  _NextStepHint(status: provider.status),
                 ],
               ),
             ),
@@ -69,9 +78,28 @@ class DashboardScreen extends StatelessWidget {
   }
 }
 
-class _RouteSummaryCard extends StatelessWidget {
+/// Small uppercase, letter-spaced section caption.
+class _SectionLabel extends StatelessWidget {
+  final String text;
+  const _SectionLabel(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Text(
+      text.toUpperCase(),
+      style: const TextStyle(
+        color: KeeperColors.textSecondary,
+        fontSize: 12,
+        fontWeight: FontWeight.w700,
+        letterSpacing: 1.2,
+      ),
+    );
+  }
+}
+
+class _ActiveManifestCard extends StatelessWidget {
   final RouteProvider provider;
-  const _RouteSummaryCard({required this.provider});
+  const _ActiveManifestCard({required this.provider});
 
   @override
   Widget build(BuildContext context) {
@@ -82,34 +110,50 @@ class _RouteSummaryCard extends StatelessWidget {
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
             children: [
-              Expanded(
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      'Ruta ${route.code}',
-                      style: Theme.of(context).textTheme.titleLarge,
-                    ),
-                    const SizedBox(height: 2),
-                    Text(
-                      Formatters.date(route.assignedDate),
-                      style: Theme.of(context).textTheme.bodyMedium,
-                    ),
-                  ],
-                ),
+              const Expanded(child: _SectionLabel('Manifiesto activo')),
+              const Icon(
+                Icons.navigation_rounded,
+                size: 18,
+                color: KeeperColors.primaryBright,
               ),
-              StatusPill.route(route.status),
             ],
           ),
-          const SizedBox(height: 18),
-          _ProgressBar(
-            value: route.sedes.isEmpty
-                ? 0
-                : route.completedSedesCount / route.sedes.length,
-            label:
-                '${route.completedSedesCount}/${route.sedes.length} sedes completadas',
+          const SizedBox(height: 8),
+          Text(
+            'Ruta #${route.code.replaceAll(RegExp(r'[^0-9]'), '')}',
+            style: Theme.of(context).textTheme.headlineSmall,
+          ),
+          const SizedBox(height: 2),
+          Text(
+            'Sector Norte · ${Formatters.date(route.assignedDate)}',
+            style: Theme.of(context).textTheme.bodyMedium,
+          ),
+          const SizedBox(height: 16),
+          Container(
+            decoration: const BoxDecoration(
+              border: Border(
+                bottom: BorderSide(color: KeeperColors.primary, width: 3),
+              ),
+            ),
+            padding: const EdgeInsets.only(bottom: 12),
+            child: Row(
+              children: [
+                Expanded(
+                  child: _KeyValue(
+                    label: 'Estado',
+                    value: route.status.label,
+                    valueColor: KeeperColors.success,
+                  ),
+                ),
+                Expanded(
+                  child: _KeyValue(
+                    label: 'Paradas',
+                    value: '${route.sedes.length}',
+                  ),
+                ),
+              ],
+            ),
           ),
         ],
       ),
@@ -117,142 +161,145 @@ class _RouteSummaryCard extends StatelessWidget {
   }
 }
 
-class _ProgressBar extends StatelessWidget {
-  final double value;
+class _KeyValue extends StatelessWidget {
   final String label;
-  const _ProgressBar({required this.value, required this.label});
+  final String value;
+  final Color? valueColor;
+  const _KeyValue({required this.label, required this.value, this.valueColor});
 
   @override
   Widget build(BuildContext context) {
     return Column(
       crossAxisAlignment: CrossAxisAlignment.start,
       children: [
-        ClipRRect(
-          borderRadius: BorderRadius.circular(999),
-          child: LinearProgressIndicator(
-            value: value,
-            minHeight: 10,
-            backgroundColor: KeeperColors.surfaceHigh,
-            valueColor: const AlwaysStoppedAnimation(
-              KeeperColors.primaryBright,
-            ),
+        _SectionLabel(label),
+        const SizedBox(height: 4),
+        Text(
+          value.toUpperCase(),
+          style: TextStyle(
+            color: valueColor ?? KeeperColors.textPrimary,
+            fontSize: 18,
+            fontWeight: FontWeight.w800,
           ),
         ),
-        const SizedBox(height: 8),
-        Text(label, style: Theme.of(context).textTheme.bodyMedium),
       ],
     );
   }
 }
 
-class _StatsRow extends StatelessWidget {
+class _TotalStopsCard extends StatelessWidget {
   final RouteProvider provider;
-  const _StatsRow({required this.provider});
+  const _TotalStopsCard({required this.provider});
 
   @override
   Widget build(BuildContext context) {
     final route = provider.route!;
-    final pickupTotal = route.sedes.fold<double>(
-      0,
-      (s, sede) => s + sede.pickupTotal,
-    );
-    return Row(
-      children: [
-        Expanded(
-          child: _StatTile(
-            icon: Icons.inventory_2_rounded,
-            color: KeeperColors.primaryBright,
-            value:
-                '${route.verifiedManifestCount}/${route.manifestPackages.length}',
-            label: 'Paquetes verificados',
-          ),
-        ),
-        const SizedBox(width: 12),
-        Expanded(
-          child: _StatTile(
-            icon: Icons.payments_rounded,
-            color: KeeperColors.success,
-            value: Formatters.currency(pickupTotal),
-            label: 'Total retirado',
-          ),
-        ),
-      ],
-    );
-  }
-}
-
-class _StatTile extends StatelessWidget {
-  final IconData icon;
-  final Color color;
-  final String value;
-  final String label;
-  const _StatTile({
-    required this.icon,
-    required this.color,
-    required this.value,
-    required this.label,
-  });
-
-  @override
-  Widget build(BuildContext context) {
     return KeeperCard(
-      padding: const EdgeInsets.all(14),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
+      child: Row(
         children: [
-          Icon(icon, color: color, size: 22),
-          const SizedBox(height: 10),
-          Text(value, style: Theme.of(context).textTheme.titleLarge),
-          const SizedBox(height: 2),
-          Text(label, style: Theme.of(context).textTheme.bodyMedium),
+          _IconBadge(
+            icon: Icons.place_rounded,
+            color: KeeperColors.primaryBright,
+          ),
+          const SizedBox(width: 14),
+          const Expanded(child: _SectionLabel('Paradas totales')),
+          Text(
+            '${route.sedes.length}',
+            style: Theme.of(context).textTheme.displaySmall,
+          ),
         ],
       ),
     );
   }
 }
 
-class _NextStepHint extends StatelessWidget {
-  final RouteStatus status;
-  const _NextStepHint({required this.status});
+class _VerifiedPackagesCard extends StatelessWidget {
+  final RouteProvider provider;
+  const _VerifiedPackagesCard({required this.provider});
 
   @override
   Widget build(BuildContext context) {
-    final (icon, text) = switch (status) {
-      RouteStatus.enBase => (
-        Icons.qr_code_scanner_rounded,
-        'Verifica los paquetes del manifiesto escaneando su código de barras.',
-      ),
-      RouteStatus.rutaVerificada => (
-        Icons.exit_to_app_rounded,
-        'Manifiesto verificado. Escanea el QR de salida de la base para iniciar.',
-      ),
-      RouteStatus.rutaIniciada => (
-        Icons.local_shipping_rounded,
-        'En tránsito. Visita las sedes en orden y realiza el check-in con QR.',
-      ),
-      RouteStatus.rutaPorFinalizar => (
-        Icons.flag_rounded,
-        'Todas las sedes procesadas. Regresa a base y escanea el QR de cierre.',
-      ),
-      RouteStatus.finalizada => (
-        Icons.task_alt_rounded,
-        'Ruta finalizada. Buen trabajo.',
-      ),
-    };
+    final route = provider.route!;
+    final total = route.manifestPackages.length;
+    final verified = route.verifiedManifestCount;
+    final value = total == 0 ? 0.0 : verified / total;
     return KeeperCard(
-      padding: const EdgeInsets.all(14),
-      child: Row(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(icon, color: KeeperColors.warning),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Text(
-              text,
-              style: const TextStyle(color: KeeperColors.textPrimary),
+          Row(
+            children: [
+              _IconBadge(
+                icon: Icons.qr_code_2_rounded,
+                color: KeeperColors.success,
+              ),
+              const SizedBox(width: 14),
+              const Expanded(child: _SectionLabel('Paquetes verificados')),
+              Text(
+                '$verified',
+                style: Theme.of(context).textTheme.displaySmall,
+              ),
+              Text(
+                ' /$total',
+                style: Theme.of(context).textTheme.titleMedium?.copyWith(
+                  color: KeeperColors.textSecondary,
+                ),
+              ),
+            ],
+          ),
+          const SizedBox(height: 14),
+          ClipRRect(
+            borderRadius: BorderRadius.circular(999),
+            child: LinearProgressIndicator(
+              value: value,
+              minHeight: 8,
+              backgroundColor: KeeperColors.surfaceHigh,
+              valueColor: const AlwaysStoppedAnimation(KeeperColors.success),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _IconBadge extends StatelessWidget {
+  final IconData icon;
+  final Color color;
+  const _IconBadge({required this.icon, required this.color});
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      width: 42,
+      height: 42,
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: 0.14),
+        borderRadius: BorderRadius.circular(12),
+      ),
+      child: Icon(icon, color: color, size: 22),
+    );
+  }
+}
+
+class _InfoNote extends StatelessWidget {
+  final String text;
+  const _InfoNote(this.text);
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        const Icon(
+          Icons.info_outline_rounded,
+          size: 18,
+          color: KeeperColors.textSecondary,
+        ),
+        const SizedBox(width: 10),
+        Expanded(
+          child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
+        ),
+      ],
     );
   }
 }
@@ -285,7 +332,11 @@ class _PrimaryAction extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final (label, icon, enabled) = switch (provider.status) {
-      RouteStatus.enBase => ('Iniciar ruta', Icons.play_arrow_rounded, true),
+      RouteStatus.enBase => (
+        'Iniciar verificación de ruta',
+        Icons.qr_code_scanner_rounded,
+        true,
+      ),
       RouteStatus.rutaVerificada => (
         'Continuar check-out',
         Icons.exit_to_app_rounded,
@@ -306,11 +357,11 @@ class _PrimaryAction extends StatelessWidget {
 
     return SafeArea(
       child: Padding(
-        padding: const EdgeInsets.all(16),
+        padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
         child: ElevatedButton.icon(
           onPressed: enabled ? () => _onPressed(context) : null,
           icon: Icon(icon),
-          label: Text(label),
+          label: Text(label.toUpperCase()),
         ),
       ),
     );

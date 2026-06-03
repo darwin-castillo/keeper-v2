@@ -13,72 +13,93 @@ class PackageTile extends StatelessWidget {
   final PackageModel package;
   final bool checked;
 
-  const PackageTile({
-    super.key,
-    required this.package,
-    required this.checked,
-  });
+  const PackageTile({super.key, required this.package, required this.checked});
 
   @override
   Widget build(BuildContext context) {
     final isPickup = package.type == PackageType.retiro;
     final accent = isPickup ? KeeperColors.warning : KeeperColors.success;
+    final typeLabel = isPickup ? 'RETIRO' : 'ENTREGA';
+    final meta = package.binLocation.isEmpty
+        ? typeLabel
+        : '$typeLabel · ${package.binLocation}';
 
     return AnimatedContainer(
       duration: const Duration(milliseconds: 220),
       margin: const EdgeInsets.only(bottom: 10),
-      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+      clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: checked
-            ? accent.withValues(alpha: 0.10)
-            : KeeperColors.surface,
+        color: checked ? accent.withValues(alpha: 0.08) : KeeperColors.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: checked
-              ? accent.withValues(alpha: 0.55)
-              : KeeperColors.border,
+          color: checked ? accent.withValues(alpha: 0.45) : KeeperColors.border,
         ),
       ),
-      child: Row(
-        children: [
-          _StatusDot(checked: checked, color: accent, isPickup: isPickup),
-          const SizedBox(width: 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              children: [
-                Text(
-                  package.description,
-                  maxLines: 1,
-                  overflow: TextOverflow.ellipsis,
-                  style: const TextStyle(
-                    color: KeeperColors.textPrimary,
-                    fontWeight: FontWeight.w600,
-                    fontSize: 15,
-                  ),
+      child: IntrinsicHeight(
+        child: Row(
+          children: [
+            // Left accent bar for verified rows.
+            Container(width: 4, color: checked ? accent : Colors.transparent),
+            Expanded(
+              child: Padding(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 14,
+                  vertical: 12,
                 ),
-                const SizedBox(height: 2),
-                Text(
-                  package.code,
-                  style: const TextStyle(
-                    color: KeeperColors.textSecondary,
-                    fontSize: 12,
-                    fontFeatures: [FontFeature.tabularFigures()],
-                  ),
+                child: Row(
+                  children: [
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            '#${package.code}',
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                            style: const TextStyle(
+                              color: KeeperColors.textPrimary,
+                              fontWeight: FontWeight.w700,
+                              fontSize: 15,
+                              fontFamily: 'monospace',
+                            ),
+                          ),
+                          const SizedBox(height: 3),
+                          Text(
+                            meta,
+                            style: TextStyle(
+                              color: isPickup
+                                  ? KeeperColors.warning
+                                  : KeeperColors.textSecondary,
+                              fontSize: 11,
+                              fontWeight: FontWeight.w700,
+                              letterSpacing: 0.5,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                    if (package.amount > 0) ...[
+                      Text(
+                        Formatters.currency(package.amount),
+                        style: TextStyle(
+                          color: checked ? accent : KeeperColors.textSecondary,
+                          fontWeight: FontWeight.w700,
+                          fontSize: 14,
+                        ),
+                      ),
+                      const SizedBox(width: 12),
+                    ],
+                    _StatusDot(
+                      checked: checked,
+                      color: accent,
+                      isPickup: isPickup,
+                    ),
+                  ],
                 ),
-              ],
-            ),
-          ),
-          if (package.amount > 0)
-            Text(
-              Formatters.currency(package.amount),
-              style: TextStyle(
-                color: checked ? accent : KeeperColors.textPrimary,
-                fontWeight: FontWeight.w700,
-                fontSize: 15,
               ),
             ),
-        ],
+          ],
+        ),
       ),
     );
   }
@@ -97,20 +118,18 @@ class _StatusDot extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     return Container(
-      width: 34,
-      height: 34,
+      width: 30,
+      height: 30,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
         color: checked ? color : KeeperColors.surfaceHigh,
-        border: Border.all(
-          color: checked ? color : KeeperColors.border,
-        ),
+        border: Border.all(color: checked ? color : KeeperColors.border),
       ),
       child: Icon(
         checked
             ? Icons.check_rounded
-            : (isPickup ? Icons.add_rounded : Icons.radio_button_unchecked),
-        size: 18,
+            : (isPickup ? Icons.add_rounded : Icons.remove_rounded),
+        size: 17,
         color: checked ? Colors.white : KeeperColors.textSecondary,
       ),
     );

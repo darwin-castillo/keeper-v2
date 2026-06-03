@@ -57,3 +57,37 @@ class KeeperLogo extends StatelessWidget {
     );
   }
 }
+
+/// Compact app-bar wordmark: small badge + `KEEPER LOGISTICS` text.
+class KeeperWordmark extends StatelessWidget {
+  const KeeperWordmark({super.key});
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      mainAxisSize: MainAxisSize.min,
+      children: [
+        const KeeperLogo(size: 28, showWordmark: false),
+        const SizedBox(width: 10),
+        Text(
+          'KEEPER ',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: KeeperColors.primaryBright,
+          ),
+        ),
+        const Text(
+          'LOGISTICS',
+          style: TextStyle(
+            fontSize: 16,
+            fontWeight: FontWeight.w800,
+            letterSpacing: 0.5,
+            color: KeeperColors.textPrimary,
+          ),
+        ),
+      ],
+    );
+  }
+}

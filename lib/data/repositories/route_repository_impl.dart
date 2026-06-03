@@ -9,6 +9,9 @@ import '../models/route_model.dart';
 /// immediately usable. All mutations are persisted locally; a real sync
 /// service would later push `pendingSync` entities to the backend.
 class RouteRepositoryImpl implements RouteRepository {
+  /// Bump when [RouteSeedData] structure changes to invalidate stale demo data.
+  static const int _seedVersion = 2;
+
   final KeeperLocalDataSource _local;
 
   RouteRepositoryImpl(this._local);
@@ -16,12 +19,14 @@ class RouteRepositoryImpl implements RouteRepository {
   @override
   Future<RouteModel?> getActiveRoute(String driverId) async {
     final stored = _local.readActiveRoute();
-    if (stored != null) {
+    final sameSeed = _local.readSeedVersion() == _seedVersion;
+    if (stored != null && sameSeed) {
       return RouteModel.fromMap(stored);
     }
-    // No local route: seed one for the driver and persist it.
+    // No local route (or outdated demo seed): seed a fresh one and persist it.
     final seeded = RouteSeedData.buildFor(driverId);
     await saveRoute(seeded);
+    await _local.writeSeedVersion(_seedVersion);
     return seeded;
   }
 

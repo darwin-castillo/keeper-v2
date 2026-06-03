@@ -8,6 +8,7 @@ import '../../core/utils/formatters.dart';
 import '../../core/utils/snack.dart';
 import '../../data/models/sede_model.dart';
 import '../providers/route_provider.dart';
+import '../widgets/keeper_logo.dart';
 import '../widgets/package_tile.dart';
 import '../widgets/scan_capture_page.dart';
 import '../widgets/scanner_view.dart';
@@ -33,33 +34,7 @@ class SedeOperationScreen extends StatelessWidget {
     }
 
     return Scaffold(
-      appBar: AppBar(
-        title: Text(sede.name),
-        bottom: PreferredSize(
-          preferredSize: const Size.fromHeight(28),
-          child: Padding(
-            padding: const EdgeInsets.only(bottom: 8, left: 16, right: 16),
-            child: Row(
-              children: [
-                const Icon(
-                  Icons.place_rounded,
-                  size: 14,
-                  color: KeeperColors.textSecondary,
-                ),
-                const SizedBox(width: 4),
-                Expanded(
-                  child: Text(
-                    sede.address,
-                    maxLines: 1,
-                    overflow: TextOverflow.ellipsis,
-                    style: Theme.of(context).textTheme.bodyMedium,
-                  ),
-                ),
-              ],
-            ),
-          ),
-        ),
-      ),
+      appBar: AppBar(titleSpacing: 8, title: const KeeperWordmark()),
       body: sede.status == SedeStatus.pending
           ? _CheckInGate(sede: sede)
           : _OperationView(sede: sede),
@@ -126,9 +101,24 @@ class _CheckInGate extends StatelessWidget {
 }
 
 /// Split scan + list operation view once checked-in.
-class _OperationView extends StatelessWidget {
+class _OperationView extends StatefulWidget {
   final SedeModel sede;
   const _OperationView({required this.sede});
+
+  @override
+  State<_OperationView> createState() => _OperationViewState();
+}
+
+class _OperationViewState extends State<_OperationView> {
+  /// Last confirmation message shown as a green toast over the scanner.
+  String? _toast;
+
+  void _showToast(String message) {
+    setState(() => _toast = message);
+    Future.delayed(const Duration(milliseconds: 1800), () {
+      if (mounted) setState(() => _toast = null);
+    });
+  }
 
   Future<void> _onScan(BuildContext context, String code) async {
     final provider = context.read<RouteProvider>();
@@ -137,6 +127,7 @@ class _OperationView extends StatelessWidget {
       if (!context.mounted) return;
       switch (result) {
         case SedeScanResult.deliveredOk:
+          _showToast('Paquete verificado: #$code');
           Snack.success(context, 'Entrega confirmada');
         case SedeScanResult.alreadyScanned:
           Snack.warning(context, 'Este paquete ya fue registrado');
@@ -237,10 +228,11 @@ class _OperationView extends StatelessWidget {
   Widget build(BuildContext context) {
     final provider = context.watch<RouteProvider>();
     // Re-read the live sede from the provider (the constructor copy is stale).
-    final live = provider.currentSede ?? sede;
+    final live = provider.currentSede ?? widget.sede;
     final deliveries = live.deliveryPackages;
     final pickups = live.pickupPackages;
     final canComplete = provider.canCompleteCurrentSede;
+    final scanned = live.packages.where((p) => p.isScanned).length;
 
     return Column(
       children: [
@@ -251,12 +243,112 @@ class _OperationView extends StatelessWidget {
             borderRadius: const BorderRadius.vertical(
               bottom: Radius.circular(20),
             ),
-            child: ScannerView(
-              onCode: (c) => _onScan(context, c),
-              hint: live.operationType.allowsPickup
-                  ? 'Escanea entregas o nuevos retiros'
-                  : 'Escanea el código de la entrega',
+            child: Stack(
+              fit: StackFit.expand,
+              children: [
+                ScannerView(
+                  onCode: (c) => _onScan(context, c),
+                  hint: live.operationType.allowsPickup
+                      ? 'Escanea entregas o nuevos retiros'
+                      : 'Escanea el código de la entrega',
+                ),
+                // Green verification toast.
+                Positioned(
+                  top: 16,
+                  left: 16,
+                  child: AnimatedSlide(
+                    duration: const Duration(milliseconds: 220),
+                    offset: _toast == null
+                        ? const Offset(-1.2, 0)
+                        : Offset.zero,
+                    child: AnimatedOpacity(
+                      duration: const Duration(milliseconds: 220),
+                      opacity: _toast == null ? 0 : 1,
+                      child: Container(
+                        padding: const EdgeInsets.symmetric(
+                          horizontal: 12,
+                          vertical: 8,
+                        ),
+                        decoration: BoxDecoration(
+                          color: KeeperColors.success,
+                          borderRadius: BorderRadius.circular(10),
+                        ),
+                        child: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            const Icon(
+                              Icons.check_circle_rounded,
+                              color: Color(0xFF00210F),
+                              size: 18,
+                            ),
+                            const SizedBox(width: 6),
+                            Text(
+                              _toast ?? '',
+                              style: const TextStyle(
+                                color: Color(0xFF00210F),
+                                fontWeight: FontWeight.w700,
+                                fontSize: 12,
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                    ),
+                  ),
+                ),
+              ],
             ),
+          ),
+        ),
+        // --- Sede header ---------------------------------------------
+        Padding(
+          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+          child: Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      'Sede #${live.order} · ${live.name}',
+                      style: Theme.of(context).textTheme.titleLarge,
+                    ),
+                    const SizedBox(height: 2),
+                    Text(
+                      'MANIFIESTO ACTUAL · ${live.packages.length} ITEMS',
+                      style: const TextStyle(
+                        color: KeeperColors.textSecondary,
+                        fontSize: 11,
+                        fontWeight: FontWeight.w700,
+                        letterSpacing: 0.8,
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              Container(
+                padding: const EdgeInsets.symmetric(
+                  horizontal: 10,
+                  vertical: 6,
+                ),
+                decoration: BoxDecoration(
+                  color: KeeperColors.primary.withValues(alpha: 0.18),
+                  borderRadius: BorderRadius.circular(999),
+                  border: Border.all(
+                    color: KeeperColors.primary.withValues(alpha: 0.5),
+                  ),
+                ),
+                child: Text(
+                  '$scanned/${live.packages.length}',
+                  style: const TextStyle(
+                    color: KeeperColors.primaryBright,
+                    fontWeight: FontWeight.w800,
+                    fontFamily: 'monospace',
+                  ),
+                ),
+              ),
+            ],
           ),
         ),
         // --- Bottom: scrollable list ----------------------------------
@@ -304,13 +396,14 @@ class _OperationView extends StatelessWidget {
             child: ElevatedButton.icon(
               onPressed: canComplete ? () => _complete(context) : null,
               style: ElevatedButton.styleFrom(
-                backgroundColor: KeeperColors.success,
+                backgroundColor: KeeperColors.lavender,
+                foregroundColor: const Color(0xFF1A1033),
                 disabledBackgroundColor: KeeperColors.surfaceHigh,
               ),
               icon: const Icon(Icons.check_circle_rounded),
               label: Text(
                 canComplete
-                    ? 'Completar sede'
+                    ? 'FINALIZAR OPERACIÓN'
                     : 'Completa las entregas pendientes',
               ),
             ),

@@ -43,8 +43,7 @@ class _ScannerViewState extends State<ScannerView> {
     if (raw == null || raw.isEmpty) return;
 
     final now = DateTime.now();
-    final isDuplicate =
-        raw == _lastCode && now.difference(_lastAt) < cooldown;
+    final isDuplicate = raw == _lastCode && now.difference(_lastAt) < cooldown;
     if (isDuplicate) return;
 
     _lastCode = raw;
@@ -64,18 +63,14 @@ class _ScannerViewState extends State<ScannerView> {
       fit: StackFit.expand,
       children: [
         MobileScanner(controller: _controller, onDetect: _handleDetect),
-        // Branded reticle.
+        // Subtle dark scrim for contrast.
+        Container(color: Colors.black.withValues(alpha: 0.15)),
+        // Green corner-bracket reticle (Keeper scan style).
         Center(
-          child: Container(
+          child: SizedBox(
             width: 240,
-            height: 240,
-            decoration: BoxDecoration(
-              borderRadius: BorderRadius.circular(20),
-              border: Border.all(
-                color: KeeperColors.primaryBright,
-                width: 3,
-              ),
-            ),
+            height: 200,
+            child: CustomPaint(painter: _ReticlePainter()),
           ),
         ),
         Positioned(
@@ -84,8 +79,7 @@ class _ScannerViewState extends State<ScannerView> {
           bottom: 24,
           child: Center(
             child: Container(
-              padding:
-                  const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
               decoration: BoxDecoration(
                 color: Colors.black.withValues(alpha: 0.55),
                 borderRadius: BorderRadius.circular(999),
@@ -121,4 +115,62 @@ class _ScannerViewState extends State<ScannerView> {
       ],
     );
   }
+}
+
+/// Draws four green corner brackets forming the scan target.
+class _ReticlePainter extends CustomPainter {
+  static const double _len = 30; // bracket arm length
+  static const double _r = 8; // corner radius
+
+  @override
+  void paint(Canvas canvas, Size size) {
+    final paint = Paint()
+      ..color = KeeperColors.success
+      ..strokeWidth = 4
+      ..strokeCap = StrokeCap.round
+      ..style = PaintingStyle.stroke;
+
+    final w = size.width;
+    final h = size.height;
+
+    // Top-left
+    canvas.drawPath(
+      Path()
+        ..moveTo(0, _len)
+        ..lineTo(0, _r)
+        ..arcToPoint(const Offset(_r, 0), radius: const Radius.circular(_r))
+        ..lineTo(_len, 0),
+      paint,
+    );
+    // Top-right
+    canvas.drawPath(
+      Path()
+        ..moveTo(w - _len, 0)
+        ..lineTo(w - _r, 0)
+        ..arcToPoint(Offset(w, _r), radius: const Radius.circular(_r))
+        ..lineTo(w, _len),
+      paint,
+    );
+    // Bottom-right
+    canvas.drawPath(
+      Path()
+        ..moveTo(w, h - _len)
+        ..lineTo(w, h - _r)
+        ..arcToPoint(Offset(w - _r, h), radius: const Radius.circular(_r))
+        ..lineTo(w - _len, h),
+      paint,
+    );
+    // Bottom-left
+    canvas.drawPath(
+      Path()
+        ..moveTo(_len, h)
+        ..lineTo(_r, h)
+        ..arcToPoint(Offset(0, h - _r), radius: const Radius.circular(_r))
+        ..lineTo(0, h - _len),
+      paint,
+    );
+  }
+
+  @override
+  bool shouldRepaint(covariant CustomPainter oldDelegate) => false;
 }
