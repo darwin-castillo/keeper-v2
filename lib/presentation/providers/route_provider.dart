@@ -37,11 +37,15 @@ class RouteProvider extends ChangeNotifier {
   RouteModel? _route;
   bool _isLoading = false;
   String? _error;
+  DateTime? _lastSync;
+  List<RouteModel> _completedRoutes = [];
 
   // --- Read-only state ---------------------------------------------------
   RouteModel? get route => _route;
   bool get isLoading => _isLoading;
   String? get error => _error;
+  DateTime? get lastSync => _lastSync;
+  List<RouteModel> get completedRoutes => _completedRoutes;
 
   RouteStatus get status => _route?.status ?? RouteStatus.enBase;
   List<SedeModel> get sedes => _route?.sedes ?? const [];
@@ -77,6 +81,16 @@ class RouteProvider extends ChangeNotifier {
   /// The closing QR can be scanned only when all sedes are processed.
   bool get canFinalize => status == RouteStatus.rutaPorFinalizar;
 
+  // --- History -----------------------------------------------------------
+
+  /// Loads all finalized routes for the current operator.
+  Future<void> loadCompletedRoutes() async {
+    final id = _route?.driverId;
+    if (id == null) return;
+    _completedRoutes = await _repository.getCompletedRoutes(id);
+    notifyListeners();
+  }
+
   // --- Loading -----------------------------------------------------------
 
   Future<void> loadRoute(String driverId) async {
@@ -85,6 +99,7 @@ class RouteProvider extends ChangeNotifier {
     notifyListeners();
     try {
       _route = await _repository.getActiveRoute(driverId);
+      _lastSync = DateTime.now();
     } catch (e) {
       _error = 'No se pudo cargar la ruta: $e';
     } finally {
@@ -268,10 +283,23 @@ class RouteProvider extends ChangeNotifier {
     if (qr.trim() != route.baseCloseQrCode) {
       throw const KeeperException('Código QR de cierre no válido.');
     }
-    await _commit(route.copyWith(status: RouteStatus.finalizada));
+    final finalized = route.copyWith(status: RouteStatus.finalizada);
+    await _repository.saveCompletedRoute(finalized);
+    await _resetAndReload();
   }
 
   // --- Internal helpers --------------------------------------------------
+
+  Future<void> _resetAndReload() async {
+    final driverId = _route?.driverId;
+    _route = null;
+    _lastSync = null;
+    notifyListeners();
+    await _repository.clearRoute();
+    if (driverId != null) {
+      await loadRoute(driverId);
+    }
+  }
 
   RouteModel _requireRoute() {
     final route = _route;
@@ -290,6 +318,7 @@ class RouteProvider extends ChangeNotifier {
 
   Future<void> _commit(RouteModel route) async {
     _route = route;
+    _lastSync = DateTime.now();
     notifyListeners();
     await _repository.saveRoute(route);
   }

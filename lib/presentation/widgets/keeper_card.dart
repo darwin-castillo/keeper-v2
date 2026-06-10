@@ -20,8 +20,9 @@ class KeeperCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Material(
-      color: KeeperColors.surface,
+      color: cs.surface,
       borderRadius: BorderRadius.circular(KeeperTheme.radiusMd),
       child: InkWell(
         onTap: onTap,
@@ -33,7 +34,7 @@ class KeeperCard extends StatelessWidget {
             border: Border.all(
               color: accent
                   ? KeeperColors.primary.withValues(alpha: 0.6)
-                  : KeeperColors.border,
+                  : cs.outline,
               width: accent ? 1.5 : 1,
             ),
             gradient: accent
@@ -42,7 +43,7 @@ class KeeperCard extends StatelessWidget {
                     end: Alignment.bottomRight,
                     colors: [
                       KeeperColors.primary.withValues(alpha: 0.10),
-                      KeeperColors.surface,
+                      cs.surface,
                     ],
                   )
                 : null,

@@ -13,4 +13,10 @@ abstract interface class RouteRepository {
 
   /// Clears the locally stored route (e.g. after a confirmed sync/close).
   Future<void> clearRoute();
+
+  /// Saves a finalized route to the operator's history.
+  Future<void> saveCompletedRoute(RouteModel route);
+
+  /// Returns all finalized routes for the given driver.
+  Future<List<RouteModel>> getCompletedRoutes(String driverId);
 }

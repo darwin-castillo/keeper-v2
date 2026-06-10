@@ -8,6 +8,7 @@ import '../../core/utils/map_launcher.dart';
 import '../../core/utils/snack.dart';
 import '../../data/models/route_model.dart';
 import '../../data/models/sede_model.dart';
+import '../providers/auth_provider.dart';
 import '../providers/route_provider.dart';
 import '../widgets/keeper_logo.dart';
 import '../widgets/status_pill.dart';
@@ -34,6 +35,7 @@ class RouteStatusScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<RouteProvider>();
+    final auth = context.watch<AuthProvider>();
     final route = provider.route!;
     final sedes = route.sedes;
     final currentIndex = route.currentSedeIndex;
@@ -52,7 +54,11 @@ class RouteStatusScreen extends StatelessWidget {
       ),
       body: Column(
         children: [
-          _TimelineHeader(route: route),
+          _RouteInfoBanner(
+            route: route,
+            driverName: auth.driverName ?? '—',
+            lastSync: provider.lastSync,
+          ),
           Expanded(
             child: ListView.builder(
               padding: const EdgeInsets.fromLTRB(16, 4, 16, 24),
@@ -98,31 +104,97 @@ class RouteStatusScreen extends StatelessWidget {
   }
 }
 
-/// Header showing the route title, status and progress.
-class _TimelineHeader extends StatelessWidget {
+/// Compact banner with route code, driver name, last sync and progress.
+class _RouteInfoBanner extends StatelessWidget {
   final RouteModel route;
-  const _TimelineHeader({required this.route});
+  final String driverName;
+  final DateTime? lastSync;
+  const _RouteInfoBanner({
+    required this.route,
+    required this.driverName,
+    required this.lastSync,
+  });
 
   @override
   Widget build(BuildContext context) {
     final total = route.sedes.length;
     final done = route.completedSedesCount;
     final pct = total == 0 ? 0 : ((done / total) * 100).round();
+    final syncText = lastSync != null ? Formatters.time(lastSync!) : '—';
+
     return Padding(
       padding: const EdgeInsets.fromLTRB(16, 8, 16, 12),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Text(
-            'Ruta actual',
-            style: Theme.of(context).textTheme.headlineMedium,
-          ),
-          const SizedBox(height: 4),
-          Text(
-            '$total paradas en total  ·  Progreso: $pct%',
-            style: Theme.of(context).textTheme.bodyMedium,
-          ),
-        ],
+      child: Container(
+        padding: const EdgeInsets.all(14),
+        decoration: BoxDecoration(
+          color: Theme.of(context).colorScheme.surface,
+          borderRadius: BorderRadius.circular(12),
+          border: Border.all(color: Theme.of(context).colorScheme.outline),
+        ),
+        child: Column(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Icon(
+                  Icons.route_rounded,
+                  size: 16,
+                  color: KeeperColors.primaryBright,
+                ),
+                const SizedBox(width: 6),
+                Text(
+                  route.code,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 14,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const Spacer(),
+                Text(
+                  '$pct%',
+                  style: const TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 13,
+                    color: KeeperColors.primaryBright,
+                  ),
+                ),
+              ],
+            ),
+            const SizedBox(height: 8),
+            Row(
+              children: [
+                Icon(
+                  Icons.person_rounded,
+                  size: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  driverName,
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+                const SizedBox(width: 16),
+                Icon(
+                  Icons.sync_rounded,
+                  size: 13,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                ),
+                const SizedBox(width: 4),
+                Text(
+                  'Última sync: $syncText',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -149,11 +221,13 @@ class _TimelineNode extends StatelessWidget {
   /// Future, not-yet-active stop: rendered dimmed.
   bool get _dim => sede.status == SedeStatus.pending && !isCurrent;
 
-  Color get _nodeColor => switch (sede.status) {
+  Color _nodeColor(BuildContext context) => switch (sede.status) {
     SedeStatus.completed => KeeperColors.success,
     SedeStatus.inProcess => KeeperColors.primaryBright,
     SedeStatus.pending =>
-      isCurrent ? KeeperColors.warning : KeeperColors.textDisabled,
+      isCurrent
+          ? KeeperColors.primary
+          : Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
   };
 
   @override
@@ -172,8 +246,8 @@ class _TimelineNode extends StatelessWidget {
                   shape: BoxShape.circle,
                   color: sede.status == SedeStatus.completed
                       ? KeeperColors.success
-                      : KeeperColors.surface,
-                  border: Border.all(color: _nodeColor, width: 2),
+                      : Theme.of(context).colorScheme.surface,
+                  border: Border.all(color: _nodeColor(context), width: 2),
                 ),
                 alignment: Alignment.center,
                 child: sede.status == SedeStatus.completed
@@ -185,7 +259,7 @@ class _TimelineNode extends StatelessWidget {
                     : Text(
                         '$position',
                         style: TextStyle(
-                          color: _nodeColor,
+                          color: _nodeColor(context),
                           fontWeight: FontWeight.w800,
                           fontSize: 16,
                         ),
@@ -193,7 +267,10 @@ class _TimelineNode extends StatelessWidget {
               ),
               if (!isLast)
                 Expanded(
-                  child: Container(width: 2, color: KeeperColors.border),
+                  child: Container(
+                    width: 2,
+                    color: Theme.of(context).colorScheme.outline,
+                  ),
                 ),
             ],
           ),
@@ -206,12 +283,12 @@ class _TimelineNode extends StatelessWidget {
                 duration: const Duration(milliseconds: 220),
                 padding: const EdgeInsets.all(16),
                 decoration: BoxDecoration(
-                  color: KeeperColors.surface,
+                  color: Theme.of(context).colorScheme.surface,
                   borderRadius: BorderRadius.circular(16),
                   border: Border.all(
                     color: isCurrent
                         ? KeeperColors.primary
-                        : KeeperColors.border,
+                        : Theme.of(context).colorScheme.outline,
                     width: isCurrent ? 1.5 : 1,
                   ),
                   gradient: isCurrent
@@ -220,7 +297,7 @@ class _TimelineNode extends StatelessWidget {
                           end: Alignment.bottomRight,
                           colors: [
                             KeeperColors.primary.withValues(alpha: 0.12),
-                            KeeperColors.surface,
+                            Theme.of(context).colorScheme.surface,
                           ],
                         )
                       : null,
@@ -238,17 +315,17 @@ class _TimelineNode extends StatelessWidget {
                       sede.name,
                       style: Theme.of(context).textTheme.titleMedium?.copyWith(
                         color: _dim
-                            ? KeeperColors.textSecondary
-                            : KeeperColors.textPrimary,
+                            ? Theme.of(context).colorScheme.onSurfaceVariant
+                            : Theme.of(context).colorScheme.onSurface,
                       ),
                     ),
                     const SizedBox(height: 4),
                     Row(
                       children: [
-                        const Icon(
+                        Icon(
                           Icons.place_rounded,
                           size: 14,
-                          color: KeeperColors.textSecondary,
+                          color: Theme.of(context).colorScheme.onSurfaceVariant,
                         ),
                         const SizedBox(width: 4),
                         Expanded(
@@ -261,22 +338,24 @@ class _TimelineNode extends StatelessWidget {
                         ),
                         const SizedBox(width: 8),
                         _OpTag(sede.operationType),
+                        const SizedBox(width: 4),
+                        IconButton(
+                          onPressed: onNavigate,
+                          icon: const Icon(Icons.navigation_rounded, size: 20),
+                          tooltip: 'Navegar',
+                          style: IconButton.styleFrom(
+                            foregroundColor: KeeperColors.primary,
+                            backgroundColor: KeeperColors.primary.withValues(
+                              alpha: 0.1,
+                            ),
+                            minimumSize: const Size(36, 36),
+                          ),
+                        ),
                       ],
                     ),
                     if (isCurrent) ...[
                       const SizedBox(height: 14),
                       ElevatedButton.icon(
-                        onPressed: onNavigate,
-                        style: ElevatedButton.styleFrom(
-                          backgroundColor: KeeperColors.warning,
-                          foregroundColor: const Color(0xFF2A1700),
-                          minimumSize: const Size.fromHeight(48),
-                        ),
-                        icon: const Icon(Icons.navigation_rounded, size: 18),
-                        label: const Text('NAVEGAR'),
-                      ),
-                      const SizedBox(height: 10),
-                      OutlinedButton.icon(
                         onPressed: onOpen,
                         icon: const Icon(Icons.login_rounded, size: 18),
                         label: const Text('Operar sede'),
@@ -312,8 +391,11 @@ class _NodeStatusLine extends StatelessWidget {
       SedeStatus.inProcess => ('$pos · EN PROCESO', KeeperColors.primaryBright),
       SedeStatus.pending =>
         isCurrent
-            ? ('SIGUIENTE PARADA', KeeperColors.warning)
-            : ('$pos · PENDIENTE', KeeperColors.textDisabled),
+            ? ('SIGUIENTE PARADA', KeeperColors.primaryDark)
+            : (
+                '$pos · PENDIENTE',
+                Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38),
+              ),
     };
     final rightText = isCurrent
         ? 'PENDIENTE'
@@ -335,8 +417,8 @@ class _NodeStatusLine extends StatelessWidget {
         if (rightText.isNotEmpty)
           Text(
             rightText,
-            style: const TextStyle(
-              color: KeeperColors.textSecondary,
+            style: TextStyle(
+              color: Theme.of(context).colorScheme.onSurfaceVariant,
               fontSize: 12,
               fontWeight: FontWeight.w700,
             ),
@@ -352,17 +434,18 @@ class _OpTag extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
       decoration: BoxDecoration(
-        color: KeeperColors.surfaceHigh,
+        color: cs.surfaceContainerHighest,
         borderRadius: BorderRadius.circular(6),
-        border: Border.all(color: KeeperColors.border),
+        border: Border.all(color: cs.outline),
       ),
       child: Text(
         type.label.toUpperCase(),
-        style: const TextStyle(
-          color: KeeperColors.textSecondary,
+        style: TextStyle(
+          color: cs.onSurfaceVariant,
           fontSize: 11,
           fontWeight: FontWeight.w700,
           letterSpacing: 0.5,

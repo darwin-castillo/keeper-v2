@@ -38,13 +38,14 @@ dependencies:
   # State management (official for this MVP)
   provider: ^6.1.2
 
+
   # Offline-first local persistence
   hive: ^2.2.3
   hive_flutter: ^1.1.0
   path_provider: ^2.1.4
 
   # Barcode / QR scanning
-  mobile_scanner: ^5.2.3
+  mobile_scanner: ^7.2.0
 
   # Open external navigation (Google Maps / Apple Maps)
   url_launcher: ^6.3.0
@@ -79,7 +80,8 @@ flutter:
 
   # To add assets to your application, add an assets section, like this:
   # assets:
-  #   - images/a_dot_burr.jpeg
+  assets:
+    - assets/images/
   #   - images/a_dot_ham.jpeg
 
   # An image asset can refer to one or more resolution-specific "variants", see

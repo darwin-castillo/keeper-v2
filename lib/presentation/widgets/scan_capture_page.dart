@@ -1,6 +1,5 @@
 import 'package:flutter/material.dart';
 
-import '../../core/theme/keeper_colors.dart';
 import 'scanner_view.dart';
 
 /// Full-screen one-shot capture used for QR check-ins (base exit, sede
@@ -94,8 +93,8 @@ class _ScanCapturePageState extends State<ScanCapturePage> {
           padding: const EdgeInsets.all(16),
           child: OutlinedButton.icon(
             onPressed: _manualEntry,
-            icon: const Icon(Icons.keyboard_rounded,
-                color: KeeperColors.textPrimary),
+            icon: Icon(Icons.keyboard_rounded,
+                color: Theme.of(context).colorScheme.onSurface),
             label: const Text('Ingresar código manualmente'),
           ),
         ),

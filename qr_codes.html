@@ -1,0 +1,297 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Keeper — Códigos QR de prueba</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body {
+    font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, sans-serif;
+    background: #0B0D11;
+    color: #F5F5F7;
+    padding: 24px;
+  }
+  h1 {
+    font-size: 22px;
+    font-weight: 800;
+    margin-bottom: 4px;
+    color: #2A64F4;
+  }
+  .sub { color: #6B7280; font-size: 14px; margin-bottom: 24px; }
+  .category { margin-bottom: 32px; }
+  .category h2 {
+    font-size: 15px;
+    font-weight: 700;
+    color: #A0A0AD;
+    text-transform: uppercase;
+    letter-spacing: 0.8px;
+    margin-bottom: 12px;
+    padding-bottom: 6px;
+    border-bottom: 2px solid #D8DAE0;
+  }
+  .grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(140px, 1fr));
+    gap: 16px;
+  }
+  .card {
+    background: #fff;
+    border-radius: 12px;
+    padding: 16px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 10px;
+    box-shadow: 0 1px 3px rgba(0,0,0,0.06);
+    border: 1px solid #D8DAE0;
+  }
+  .card .qr {
+    width: 120px;
+    height: 120px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .card .qr canvas, .card .qr img { border-radius: 4px; }
+  .card .label {
+    font-size: 12px;
+    font-weight: 700;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #111827;
+    text-align: center;
+    word-break: break-all;
+  }
+  .card { cursor: pointer; }
+  .card:active { transform: scale(0.97); }
+  .card .tag {
+    font-size: 10px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 3px 8px;
+    border-radius: 6px;
+    color: #fff;
+  }
+  .tag-blue   { background: #2A64F4; }
+  .tag-green  { background: #2EDF8F; color: #00210F; }
+  .tag-amber  { background: #F4B740; color: #2A1700; }
+
+  /* Overlay */
+  .overlay {
+    display: none;
+    position: fixed;
+    inset: 0;
+    background: #0B0D11;
+    z-index: 999;
+    align-items: center;
+    justify-content: center;
+    padding: 24px;
+  }
+  .overlay.open { display: flex; }
+  .overlay .dialog {
+    background: #fff;
+    border-radius: 20px;
+    padding: 32px;
+    display: flex;
+    flex-direction: column;
+    align-items: center;
+    gap: 16px;
+    max-width: 400px;
+    width: 100%;
+    box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+    animation: pop 0.2s ease;
+  }
+  @keyframes pop {
+    0% { transform: scale(0.85); opacity: 0; }
+    100% { transform: scale(1); opacity: 1; }
+  }
+  .overlay .dialog .qr-big {
+    width: 280px;
+    height: 280px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+  }
+  .overlay .dialog .qr-big canvas { border-radius: 8px; }
+  .overlay .dialog .label-big {
+    font-size: 18px;
+    font-weight: 800;
+    font-family: 'SF Mono', 'Fira Code', monospace;
+    color: #111827;
+    text-align: center;
+  }
+  .overlay .dialog .tag-big {
+    font-size: 11px;
+    font-weight: 700;
+    text-transform: uppercase;
+    letter-spacing: 0.5px;
+    padding: 4px 12px;
+    border-radius: 8px;
+    color: #fff;
+  }
+  .overlay .dialog .close-hint {
+    font-size: 13px;
+    color: #9CA3AF;
+    margin-top: 4px;
+  }
+</style>
+</head>
+<body>
+
+<h1>Keeper</h1>
+<p class="sub">Códigos QR de prueba para escanear con la app</p>
+
+<div id="app"></div>
+
+<script src="https://cdn.jsdelivr.net/npm/qrcodejs@1.0.0/qrcode.min.js"></script>
+<script>
+(function() {
+  var groups = [
+    {
+      title: 'Base',
+      tag: 'tag-amber',
+      tagLabel: 'Base',
+      codes: [
+        { code: 'KEEPER-BASE-EXIT', label: 'Salida' },
+        { code: 'KEEPER-BASE-CLOSE', label: 'Cierre' },
+      ],
+    },
+    {
+      title: 'Sedes',
+      tag: 'tag-blue',
+      tagLabel: 'Sede',
+      codes: [
+        { code: 'KEEPER-SEDE-1', label: 'Sede 1' },
+        { code: 'KEEPER-SEDE-2', label: 'Sede 2' },
+        { code: 'KEEPER-SEDE-3', label: 'Sede 3' },
+        { code: 'KEEPER-SEDE-4', label: 'Sede 4' },
+        { code: 'KEEPER-SEDE-5', label: 'Sede 5' },
+        { code: 'KEEPER-SEDE-6', label: 'Sede 6' },
+      ],
+    },
+    {
+      title: 'Paquetes',
+      tag: 'tag-green',
+      tagLabel: 'Paquete',
+      codes: [
+        { code: 'PK-1001' }, { code: 'PK-1002' },
+        { code: 'PK-3204' }, { code: 'PK-3210' },
+        { code: 'PK-9912' }, { code: 'PK-9945' },
+        { code: 'PK-1052' }, { code: 'PK-7781' },
+        { code: 'PK-8830' },
+      ],
+    },
+  ];
+
+  var app = document.getElementById('app');
+
+  groups.forEach(function(group) {
+    var cat = document.createElement('div');
+    cat.className = 'category';
+
+    var h2 = document.createElement('h2');
+    h2.textContent = group.title;
+    cat.appendChild(h2);
+
+    var grid = document.createElement('div');
+    grid.className = 'grid';
+
+    group.codes.forEach(function(item) {
+      var card = document.createElement('div');
+      card.className = 'card';
+
+      var qrDiv = document.createElement('div');
+      qrDiv.className = 'qr';
+      qrDiv.id = 'qr-' + item.code.replace(/_/g, '-').toLowerCase();
+      card.appendChild(qrDiv);
+
+      var tag = document.createElement('span');
+      tag.className = 'tag ' + group.tag;
+      tag.textContent = item.label || group.tagLabel;
+      card.appendChild(tag);
+
+      var label = document.createElement('div');
+      label.className = 'label';
+      label.textContent = item.code;
+      card.appendChild(label);
+
+      grid.appendChild(card);
+    });
+
+    cat.appendChild(grid);
+    app.appendChild(cat);
+  });
+
+  // Overlay HTML
+  var overlay = document.createElement('div');
+  overlay.className = 'overlay';
+  overlay.id = 'overlay';
+  overlay.innerHTML =
+    '<div class="dialog">' +
+      '<div class="qr-big" id="qr-big"></div>' +
+      '<span class="tag-big" id="tag-big"></span>' +
+      '<div class="label-big" id="label-big"></div>' +
+      '<div class="close-hint">Toca fuera para cerrar</div>' +
+    '</div>';
+  document.body.appendChild(overlay);
+
+  overlay.addEventListener('click', function(e) {
+    if (e.target === overlay) {
+      overlay.classList.remove('open');
+    }
+  });
+
+  // Reusable big-QR cache (avoid re-creating on every open)
+  var bigQrInstance = null;
+
+  function openOverlay(code, tag, tagClass) {
+    // Show overlay
+    overlay.classList.add('open');
+
+    // Set text
+    document.getElementById('tag-big').textContent = tag;
+    document.getElementById('tag-big').className = 'tag-big ' + tagClass;
+    document.getElementById('label-big').textContent = code;
+
+    // Re-generate QR at larger size
+    var container = document.getElementById('qr-big');
+    container.innerHTML = '';
+    bigQrInstance = new QRCode(container, {
+      text: code,
+      width: 280,
+      height: 280,
+      colorDark: '#111827',
+      colorLight: '#ffffff',
+      correctLevel: QRCode.CorrectLevel.M,
+    });
+  }
+
+  // Generate QR codes + attach click
+  setTimeout(function() {
+    groups.forEach(function(group) {
+      group.codes.forEach(function(item) {
+        var id = 'qr-' + item.code.replace(/_/g, '-').toLowerCase();
+        var el = document.getElementById(id);
+        if (el) {
+          new QRCode(el, {
+            text: item.code,
+            width: 120,
+            height: 120,
+            colorDark: '#111827',
+            colorLight: '#ffffff',
+            correctLevel: QRCode.CorrectLevel.M,
+          });
+          // Click to open overlay
+          el.parentElement.addEventListener('click', function() {
+            openOverlay(item.code, item.label || group.tagLabel, group.tag);
+          });
+        }
+      });
+    });
+  }, 50);
+})();
+</script>
+
+</body>
+</html>

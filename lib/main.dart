@@ -9,14 +9,13 @@ import 'data/repositories/route_repository_impl.dart';
 import 'domain/repositories/route_repository.dart';
 import 'presentation/providers/auth_provider.dart';
 import 'presentation/providers/route_provider.dart';
+import 'presentation/providers/theme_provider.dart';
 import 'presentation/screens/login_screen.dart';
 import 'presentation/screens/main_shell.dart';
 
 Future<void> main() async {
   WidgetsFlutterBinding.ensureInitialized();
-  // Offline-first store must be ready before the app reads any route.
   await KeeperLocalDataSource.init();
-  // Locale data for es/es_MX date & currency formatting.
   await initializeDateFormatting('es_MX', null);
   SystemChrome.setSystemUIOverlayStyle(KeeperTheme.systemOverlay);
   runApp(const KeeperApp());
@@ -27,7 +26,6 @@ class KeeperApp extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    // Compose the dependency graph (Clean Architecture wiring).
     final RouteRepository repository = RouteRepositoryImpl(
       KeeperLocalDataSource(),
     );
@@ -35,14 +33,18 @@ class KeeperApp extends StatelessWidget {
     return MultiProvider(
       providers: [
         ChangeNotifierProvider(create: (_) => AuthProvider()),
+        ChangeNotifierProvider(create: (_) => ThemeProvider()),
         ChangeNotifierProvider(create: (_) => RouteProvider(repository)),
       ],
-      child: MaterialApp(
-        title: 'Keeper',
-        debugShowCheckedModeBanner: false,
-        theme: KeeperTheme.dark,
-        themeMode: ThemeMode.dark,
-        home: const _Root(),
+      child: Consumer<ThemeProvider>(
+        builder: (_, theme, _) => MaterialApp(
+          title: 'Keeper',
+          debugShowCheckedModeBanner: false,
+          theme: KeeperTheme.light,
+          darkTheme: KeeperTheme.dark,
+          themeMode: theme.mode,
+          home: const _Root(),
+        ),
       ),
     );
   }

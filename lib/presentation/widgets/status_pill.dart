@@ -46,7 +46,7 @@ class StatusPill extends StatelessWidget {
   /// (e.g. `EN_BASE`, `RUTA_INICIADA`).
   factory StatusPill.route(RouteStatus status) {
     final color = switch (status) {
-      RouteStatus.enBase => KeeperColors.success,
+      RouteStatus.enBase => KeeperColors.primary,
       RouteStatus.rutaVerificada => KeeperColors.primaryBright,
       RouteStatus.rutaIniciada => KeeperColors.primaryBright,
       RouteStatus.rutaPorFinalizar => KeeperColors.warning,
@@ -57,13 +57,14 @@ class StatusPill extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
       padding: EdgeInsets.symmetric(horizontal: dot ? 12 : 10, vertical: 6),
       decoration: BoxDecoration(
-        color: dot ? KeeperColors.surfaceHigh : color.withValues(alpha: 0.14),
+        color: dot ? cs.surfaceContainerHighest : color.withValues(alpha: 0.14),
         borderRadius: BorderRadius.circular(999),
         border: Border.all(
-          color: dot ? KeeperColors.border : color.withValues(alpha: 0.5),
+          color: dot ? cs.outline : color.withValues(alpha: 0.5),
         ),
       ),
       child: Row(

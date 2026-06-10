@@ -2,8 +2,7 @@ import 'package:flutter/material.dart';
 
 import '../../core/theme/keeper_colors.dart';
 
-/// Keeper brand mark: a purple rounded badge with a shield/box glyph,
-/// optionally followed by the wordmark.
+/// Keeper brand mark: an image badge optionally followed by the wordmark.
 class KeeperLogo extends StatelessWidget {
   final double size;
   final bool showWordmark;
@@ -12,53 +11,45 @@ class KeeperLogo extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final badge = Container(
+    if (showWordmark) {
+      return Container(
+        padding: EdgeInsets.all(size * 0.12),
+        decoration: BoxDecoration(
+          color: Colors.white.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(16),
+        ),
+        child: Image.asset(
+          'assets/images/logo_keeper.png',
+          height: size,
+          fit: BoxFit.contain,
+        ),
+      );
+    }
+
+    return Container(
       width: size,
       height: size,
       decoration: BoxDecoration(
-        gradient: const LinearGradient(
-          begin: Alignment.topLeft,
-          end: Alignment.bottomRight,
-          colors: [KeeperColors.primaryBright, KeeperColors.primary],
-        ),
+        color: Colors.white,
         borderRadius: BorderRadius.circular(size * 0.28),
         boxShadow: [
           BoxShadow(
-            color: KeeperColors.primary.withValues(alpha: 0.45),
-            blurRadius: size * 0.4,
-            offset: Offset(0, size * 0.12),
+            color: Colors.black.withValues(alpha: 0.15),
+            blurRadius: size * 0.15,
+            offset: Offset(0, size * 0.06),
           ),
         ],
       ),
-      child: Icon(
-        Icons.verified_user_rounded,
-        color: Colors.white,
-        size: size * 0.56,
+      padding: EdgeInsets.all(size * 0.12),
+      child: Image.asset(
+        'assets/images/logo_icon_keeper.png',
+        fit: BoxFit.contain,
       ),
-    );
-
-    if (!showWordmark) return badge;
-
-    return Row(
-      mainAxisSize: MainAxisSize.min,
-      children: [
-        badge,
-        SizedBox(width: size * 0.32),
-        Text(
-          'Keeper',
-          style: TextStyle(
-            fontSize: size * 0.62,
-            fontWeight: FontWeight.w800,
-            letterSpacing: -1,
-            color: KeeperColors.textPrimary,
-          ),
-        ),
-      ],
     );
   }
 }
 
-/// Compact app-bar wordmark: small badge + `KEEPER LOGISTICS` text.
+/// Compact app-bar wordmark: small icon badge + `KEEPER LOGISTICS` text.
 class KeeperWordmark extends StatelessWidget {
   const KeeperWordmark({super.key});
 
@@ -67,7 +58,19 @@ class KeeperWordmark extends StatelessWidget {
     return Row(
       mainAxisSize: MainAxisSize.min,
       children: [
-        const KeeperLogo(size: 28, showWordmark: false),
+        Container(
+          width: 28,
+          height: 28,
+          decoration: BoxDecoration(
+            color: Colors.white,
+            borderRadius: BorderRadius.circular(8),
+          ),
+          padding: const EdgeInsets.all(3),
+          child: Image.asset(
+            'assets/images/logo_icon_keeper.png',
+            fit: BoxFit.contain,
+          ),
+        ),
         const SizedBox(width: 10),
         Text(
           'KEEPER ',
@@ -78,13 +81,13 @@ class KeeperWordmark extends StatelessWidget {
             color: KeeperColors.primaryBright,
           ),
         ),
-        const Text(
-          'LOGISTICS',
+        Text(
+          'APP',
           style: TextStyle(
             fontSize: 16,
             fontWeight: FontWeight.w800,
             letterSpacing: 0.5,
-            color: KeeperColors.textPrimary,
+            color: Theme.of(context).colorScheme.onSurface,
           ),
         ),
       ],

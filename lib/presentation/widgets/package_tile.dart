@@ -18,7 +18,7 @@ class PackageTile extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final isPickup = package.type == PackageType.retiro;
-    final accent = isPickup ? KeeperColors.warning : KeeperColors.success;
+    final accent = isPickup ? KeeperColors.primaryDark : KeeperColors.success;
     final typeLabel = isPickup ? 'RETIRO' : 'ENTREGA';
     final meta = package.binLocation.isEmpty
         ? typeLabel
@@ -29,10 +29,14 @@ class PackageTile extends StatelessWidget {
       margin: const EdgeInsets.only(bottom: 10),
       clipBehavior: Clip.antiAlias,
       decoration: BoxDecoration(
-        color: checked ? accent.withValues(alpha: 0.08) : KeeperColors.surface,
+        color: checked
+            ? accent.withValues(alpha: 0.08)
+            : Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(14),
         border: Border.all(
-          color: checked ? accent.withValues(alpha: 0.45) : KeeperColors.border,
+          color: checked
+              ? accent.withValues(alpha: 0.45)
+              : Theme.of(context).colorScheme.outline,
         ),
       ),
       child: IntrinsicHeight(
@@ -56,8 +60,8 @@ class PackageTile extends StatelessWidget {
                             '#${package.code}',
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
-                            style: const TextStyle(
-                              color: KeeperColors.textPrimary,
+                            style: TextStyle(
+                              color: Theme.of(context).colorScheme.onSurface,
                               fontWeight: FontWeight.w700,
                               fontSize: 15,
                               fontFamily: 'monospace',
@@ -68,8 +72,8 @@ class PackageTile extends StatelessWidget {
                             meta,
                             style: TextStyle(
                               color: isPickup
-                                  ? KeeperColors.warning
-                                  : KeeperColors.textSecondary,
+                                  ? KeeperColors.primaryDark
+                                  : Theme.of(context).colorScheme.onSurfaceVariant,
                               fontSize: 11,
                               fontWeight: FontWeight.w700,
                               letterSpacing: 0.5,
@@ -82,7 +86,9 @@ class PackageTile extends StatelessWidget {
                       Text(
                         Formatters.currency(package.amount),
                         style: TextStyle(
-                          color: checked ? accent : KeeperColors.textSecondary,
+                          color: checked
+                              ? accent
+                              : Theme.of(context).colorScheme.onSurfaceVariant,
                           fontWeight: FontWeight.w700,
                           fontSize: 14,
                         ),
@@ -122,15 +128,20 @@ class _StatusDot extends StatelessWidget {
       height: 30,
       decoration: BoxDecoration(
         shape: BoxShape.circle,
-        color: checked ? color : KeeperColors.surfaceHigh,
-        border: Border.all(color: checked ? color : KeeperColors.border),
+        color: checked
+            ? color
+            : Theme.of(context).colorScheme.surfaceContainerHighest,
+        border: Border.all(
+            color: checked ? color : Theme.of(context).colorScheme.outline),
       ),
       child: Icon(
         checked
             ? Icons.check_rounded
             : (isPickup ? Icons.add_rounded : Icons.remove_rounded),
         size: 17,
-        color: checked ? Colors.white : KeeperColors.textSecondary,
+        color: checked
+            ? Colors.white
+            : Theme.of(context).colorScheme.onSurfaceVariant,
       ),
     );
   }

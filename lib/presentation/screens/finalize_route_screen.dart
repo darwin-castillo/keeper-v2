@@ -118,10 +118,11 @@ class FinalizeRouteScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor: KeeperColors.surfaceHigh,
+                      backgroundColor:
+                          Theme.of(context).colorScheme.surfaceContainerHighest,
                       child: Text('${sede.order}',
-                          style: const TextStyle(
-                            color: KeeperColors.textPrimary,
+                          style: TextStyle(
+                            color: Theme.of(context).colorScheme.onSurface,
                             fontWeight: FontWeight.w700,
                           )),
                     ),

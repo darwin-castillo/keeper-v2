@@ -5,7 +5,11 @@ import '../../core/enums/route_enums.dart';
 import '../../core/theme/keeper_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/route_provider.dart';
+import '../providers/theme_provider.dart';
 import '../widgets/keeper_card.dart';
+import '../../core/utils/app_info.dart';
+import '../../core/utils/formatters.dart';
+import '../../data/models/route_model.dart';
 import 'dashboard_screen.dart';
 import 'finalize_route_screen.dart';
 import 'route_status_screen.dart';
@@ -40,7 +44,7 @@ class _MainShellState extends State<MainShell> {
         children: [
           manifestTab,
           const _ScannerTab(),
-          const _MessagesTab(),
+          const _HistoryTab(),
           const _AccountTab(),
         ],
       ),
@@ -62,16 +66,17 @@ class _KeeperNavBar extends StatelessWidget {
   static const _items = <({IconData icon, String label, bool badge})>[
     (icon: Icons.local_shipping_rounded, label: 'Manifiesto', badge: false),
     (icon: Icons.qr_code_scanner_rounded, label: 'Escáner', badge: false),
-    (icon: Icons.chat_bubble_rounded, label: 'Mensajes', badge: true),
+    (icon: Icons.history_rounded, label: 'Historial', badge: false),
     (icon: Icons.account_circle_rounded, label: 'Cuenta', badge: false),
   ];
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     return Container(
-      decoration: const BoxDecoration(
-        color: KeeperColors.background,
-        border: Border(top: BorderSide(color: KeeperColors.border)),
+      decoration: BoxDecoration(
+        color: Theme.of(context).scaffoldBackgroundColor,
+        border: Border(top: BorderSide(color: cs.outline)),
       ),
       child: SafeArea(
         top: false,
@@ -106,7 +111,9 @@ class _NavItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final color = active ? Colors.white : KeeperColors.textSecondary;
+    final color = active
+        ? Colors.white
+        : Theme.of(context).colorScheme.onSurfaceVariant;
     return InkWell(
       onTap: onTap,
       borderRadius: BorderRadius.circular(14),
@@ -241,27 +248,116 @@ class _ScannerTab extends StatelessWidget {
   }
 }
 
-class _MessagesTab extends StatelessWidget {
-  const _MessagesTab();
+class _HistoryTab extends StatefulWidget {
+  const _HistoryTab();
+
+  @override
+  State<_HistoryTab> createState() => _HistoryTabState();
+}
+
+class _HistoryTabState extends State<_HistoryTab> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      context.read<RouteProvider>().loadCompletedRoutes();
+    });
+  }
 
   @override
   Widget build(BuildContext context) {
+    final routes = context.watch<RouteProvider>().completedRoutes;
+
     return Scaffold(
-      appBar: AppBar(title: const Text('Mensajes')),
-      body: Center(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            const Icon(Icons.chat_bubble_outline_rounded,
-                size: 56, color: KeeperColors.textDisabled),
-            const SizedBox(height: 14),
-            Text('Sin mensajes nuevos',
-                style: Theme.of(context).textTheme.titleMedium),
-            const SizedBox(height: 4),
-            Text('Las notificaciones de la central aparecerán aquí.',
-                style: Theme.of(context).textTheme.bodyMedium),
-          ],
-        ),
+      appBar: AppBar(title: const Text('Historial')),
+      body: routes.isEmpty
+          ? Center(
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Icon(Icons.history_rounded,
+                      size: 56, color: Theme.of(context).colorScheme.onSurface.withValues(alpha: 0.38)),
+                  const SizedBox(height: 14),
+                  Text('Sin rutas finalizadas',
+                      style: Theme.of(context).textTheme.titleMedium),
+                  const SizedBox(height: 4),
+                  Text('Las rutas completadas aparecerán aquí.',
+                      style: Theme.of(context).textTheme.bodyMedium),
+                ],
+              ),
+            )
+          : ListView.separated(
+              padding: const EdgeInsets.all(16),
+              itemCount: routes.length,
+              separatorBuilder: (_, _) => const SizedBox(height: 10),
+              itemBuilder: (context, i) => _HistoryRouteCard(route: routes[i]),
+            ),
+    );
+  }
+}
+
+class _HistoryRouteCard extends StatelessWidget {
+  final RouteModel route;
+  const _HistoryRouteCard({required this.route});
+
+  @override
+  Widget build(BuildContext context) {
+    final total = route.sedes.length;
+    final done = route.completedSedesCount;
+
+    return KeeperCard(
+      child: Row(
+        children: [
+          Container(
+            width: 44,
+            height: 44,
+            decoration: BoxDecoration(
+              color: KeeperColors.primary.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(10),
+            ),
+            child: const Icon(Icons.check_circle_rounded,
+                color: KeeperColors.primaryBright, size: 24),
+          ),
+          const SizedBox(width: 14),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  route.code,
+                  style: TextStyle(
+                    fontWeight: FontWeight.w700,
+                    fontSize: 15,
+                    color: Theme.of(context).colorScheme.onSurface,
+                  ),
+                ),
+                const SizedBox(height: 2),
+                Text(
+                  '${Formatters.date(route.assignedDate)} · $total paradas',
+                  style: TextStyle(
+                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    fontSize: 12,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          Container(
+            padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 4),
+            decoration: BoxDecoration(
+              color: KeeperColors.success.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(6),
+            ),
+            child: Text(
+              '$done/$total',
+              style: const TextStyle(
+                color: KeeperColors.success,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
       ),
     );
   }
@@ -304,6 +400,37 @@ class _AccountTab extends StatelessWidget {
             ),
           ),
           const SizedBox(height: 18),
+          KeeperCard(
+            child: Row(
+              children: [
+                Icon(Icons.dark_mode_rounded,
+                    color: Theme.of(context).colorScheme.onSurfaceVariant),
+                const SizedBox(width: 14),
+                Expanded(
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      const Text('Modo oscuro',
+                          style: TextStyle(fontWeight: FontWeight.w600)),
+                      Text('Cambia la apariencia de la app',
+                          style: TextStyle(
+                              fontSize: 12,
+                              color: Theme.of(context)
+                                  .colorScheme
+                                  .onSurfaceVariant)),
+                    ],
+                  ),
+                ),
+                Switch(
+                  value: context.watch<ThemeProvider>().isDarkMode,
+                  onChanged: (v) =>
+                      context.read<ThemeProvider>().setDarkMode(v),
+                  activeThumbColor: KeeperColors.primary,
+                ),
+              ],
+            ),
+          ),
+          const SizedBox(height: 18),
           OutlinedButton.icon(
             onPressed: auth.logout,
             icon: const Icon(Icons.logout_rounded, color: KeeperColors.danger),
@@ -311,6 +438,18 @@ class _AccountTab extends StatelessWidget {
                 style: TextStyle(color: KeeperColors.danger)),
             style: OutlinedButton.styleFrom(
               side: const BorderSide(color: KeeperColors.danger),
+            ),
+          ),
+          const SizedBox(height: 32),
+          Center(
+            child: Text(
+              'Versión ${AppInfo.displayVersion}',
+              style: TextStyle(
+                  color: Theme.of(context)
+                      .colorScheme
+                      .onSurface
+                      .withValues(alpha: 0.38),
+                  fontSize: 12),
             ),
           ),
         ],

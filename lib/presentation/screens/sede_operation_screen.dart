@@ -149,7 +149,7 @@ class _OperationViewState extends State<_OperationView> {
     final confirmed = await showModalBottomSheet<bool>(
       context: context,
       isScrollControlled: true,
-      backgroundColor: KeeperColors.surface,
+      backgroundColor: Theme.of(context).colorScheme.surface,
       shape: const RoundedRectangleBorder(
         borderRadius: BorderRadius.vertical(top: Radius.circular(24)),
       ),
@@ -317,8 +317,8 @@ class _OperationViewState extends State<_OperationView> {
                     const SizedBox(height: 2),
                     Text(
                       'MANIFIESTO ACTUAL · ${live.packages.length} ITEMS',
-                      style: const TextStyle(
-                        color: KeeperColors.textSecondary,
+                      style: TextStyle(
+                        color: Theme.of(context).colorScheme.onSurfaceVariant,
                         fontSize: 11,
                         fontWeight: FontWeight.w700,
                         letterSpacing: 0.8,
@@ -372,8 +372,8 @@ class _OperationViewState extends State<_OperationView> {
               ],
               if (live.operationType.allowsPickup) ...[
                 _SectionHeader(
-                  icon: Icons.add_box_rounded,
-                  color: KeeperColors.warning,
+                  icon: Icons.download_rounded,
+                  color: KeeperColors.primaryDark,
                   title: 'Retiros',
                   trailing: Formatters.currency(live.pickupTotal),
                 ),
@@ -398,7 +398,8 @@ class _OperationViewState extends State<_OperationView> {
               style: ElevatedButton.styleFrom(
                 backgroundColor: KeeperColors.lavender,
                 foregroundColor: const Color(0xFF1A1033),
-                disabledBackgroundColor: KeeperColors.surfaceHigh,
+                disabledBackgroundColor:
+                    Theme.of(context).colorScheme.surfaceContainerHighest,
               ),
               icon: const Icon(Icons.check_circle_rounded),
               label: Text(
@@ -453,9 +454,9 @@ class _EmptyHint extends StatelessWidget {
       padding: const EdgeInsets.all(14),
       margin: const EdgeInsets.only(bottom: 10),
       decoration: BoxDecoration(
-        color: KeeperColors.surface,
+        color: Theme.of(context).colorScheme.surface,
         borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: KeeperColors.border),
+        border: Border.all(color: Theme.of(context).colorScheme.outline),
       ),
       child: Text(text, style: Theme.of(context).textTheme.bodyMedium),
     );

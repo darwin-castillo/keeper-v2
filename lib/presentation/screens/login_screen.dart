@@ -5,6 +5,7 @@ import '../../core/theme/keeper_colors.dart';
 import '../providers/auth_provider.dart';
 import '../providers/route_provider.dart';
 import '../widgets/keeper_logo.dart';
+import '../../core/utils/app_info.dart';
 
 /// Secure access screen for the operator. On success it loads the active
 /// route into [RouteProvider] and the root navigator swaps to the dashboard.
@@ -109,8 +110,23 @@ class _LoginScreenState extends State<LoginScreen> {
                   'Keeper · Movilidad logística',
                   textAlign: TextAlign.center,
                   style: TextStyle(
-                    color: KeeperColors.textDisabled,
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.38),
                     fontSize: 12,
+                  ),
+                ),
+                const SizedBox(height: 4),
+                Text(
+                  AppInfo.displayVersion,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    color: Theme.of(context)
+                        .colorScheme
+                        .onSurface
+                        .withValues(alpha: 0.38),
+                    fontSize: 11,
                   ),
                 ),
               ],

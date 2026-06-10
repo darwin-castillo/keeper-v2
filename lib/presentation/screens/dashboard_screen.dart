@@ -58,6 +58,11 @@ class DashboardScreen extends StatelessWidget {
                   ),
                   const SizedBox(height: 22),
                   _ActiveManifestCard(provider: provider),
+                  if (provider.status == RouteStatus.rutaIniciada ||
+                      provider.status == RouteStatus.rutaPorFinalizar) ...[
+                    const SizedBox(height: 16),
+                    _SedeProgressCard(provider: provider),
+                  ],
                   const SizedBox(height: 24),
                   const _SectionLabel('Estadísticas de ruta'),
                   const SizedBox(height: 12),
@@ -87,8 +92,8 @@ class _SectionLabel extends StatelessWidget {
   Widget build(BuildContext context) {
     return Text(
       text.toUpperCase(),
-      style: const TextStyle(
-        color: KeeperColors.textSecondary,
+      style: TextStyle(
+        color: Theme.of(context).colorScheme.onSurfaceVariant,
         fontSize: 12,
         fontWeight: FontWeight.w700,
         letterSpacing: 1.2,
@@ -143,12 +148,12 @@ class _ActiveManifestCard extends StatelessWidget {
                   child: _KeyValue(
                     label: 'Estado',
                     value: route.status.label,
-                    valueColor: KeeperColors.success,
+                    valueColor: KeeperColors.primaryBright,
                   ),
                 ),
                 Expanded(
                   child: _KeyValue(
-                    label: 'Paradas',
+                    label: 'Sucursales',
                     value: '${route.sedes.length}',
                   ),
                 ),
@@ -177,7 +182,7 @@ class _KeyValue extends StatelessWidget {
         Text(
           value.toUpperCase(),
           style: TextStyle(
-            color: valueColor ?? KeeperColors.textPrimary,
+            color: valueColor ?? Theme.of(context).colorScheme.onSurface,
             fontSize: 18,
             fontWeight: FontWeight.w800,
           ),
@@ -197,12 +202,9 @@ class _TotalStopsCard extends StatelessWidget {
     return KeeperCard(
       child: Row(
         children: [
-          _IconBadge(
-            icon: Icons.place_rounded,
-            color: KeeperColors.primaryBright,
-          ),
+          _IconBadge(icon: Icons.place_rounded, color: KeeperColors.primary),
           const SizedBox(width: 14),
-          const Expanded(child: _SectionLabel('Paradas totales')),
+          const Expanded(child: _SectionLabel('Sucursales Totales')),
           Text(
             '${route.sedes.length}',
             style: Theme.of(context).textTheme.displaySmall,
@@ -231,7 +233,7 @@ class _VerifiedPackagesCard extends StatelessWidget {
             children: [
               _IconBadge(
                 icon: Icons.qr_code_2_rounded,
-                color: KeeperColors.success,
+                color: KeeperColors.primary,
               ),
               const SizedBox(width: 14),
               const Expanded(child: _SectionLabel('Paquetes verificados')),
@@ -242,7 +244,7 @@ class _VerifiedPackagesCard extends StatelessWidget {
               Text(
                 ' /$total',
                 style: Theme.of(context).textTheme.titleMedium?.copyWith(
-                  color: KeeperColors.textSecondary,
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
                 ),
               ),
             ],
@@ -253,12 +255,138 @@ class _VerifiedPackagesCard extends StatelessWidget {
             child: LinearProgressIndicator(
               value: value,
               minHeight: 8,
-              backgroundColor: KeeperColors.surfaceHigh,
-              valueColor: const AlwaysStoppedAnimation(KeeperColors.success),
+              backgroundColor: Theme.of(
+                context,
+              ).colorScheme.surfaceContainerHighest,
+              valueColor: const AlwaysStoppedAnimation(
+                KeeperColors.primaryBright,
+              ),
             ),
           ),
         ],
       ),
+    );
+  }
+}
+
+class _SedeProgressCard extends StatelessWidget {
+  final RouteProvider provider;
+  const _SedeProgressCard({required this.provider});
+
+  @override
+  Widget build(BuildContext context) {
+    final route = provider.route!;
+    final currentSede = route.currentSede;
+    final nextIndex = route.currentSedeIndex + 1;
+    final nextSede = nextIndex < route.sedes.length
+        ? route.sedes[nextIndex]
+        : null;
+
+    final bool isInProcess =
+        currentSede != null && currentSede.status == SedeStatus.inProcess;
+
+    return KeeperCard(
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          const _SectionLabel('Progreso de ruta'),
+          const SizedBox(height: 12),
+          // Current sede
+          if (isInProcess)
+            _SedeRow(
+              icon: Icons.storefront_rounded,
+              iconColor: KeeperColors.success,
+              label: 'Sede actual',
+              name: currentSede.name,
+              subtitle: currentSede.address,
+            ),
+          if (isInProcess && nextSede != null) const SizedBox(height: 12),
+          // Next sede
+          if (nextSede != null)
+            _SedeRow(
+              icon: Icons.arrow_forward_rounded,
+              iconColor: KeeperColors.primaryBright,
+              label: 'Próxima parada',
+              name: nextSede.name,
+              subtitle: nextSede.address,
+            ),
+          if (!isInProcess && nextSede == null && currentSede != null)
+            _SedeRow(
+              icon: Icons.storefront_rounded,
+              iconColor: KeeperColors.primaryBright,
+              label: 'Siguiente parada',
+              name: currentSede.name,
+              subtitle: currentSede.address,
+            ),
+        ],
+      ),
+    );
+  }
+}
+
+class _SedeRow extends StatelessWidget {
+  final IconData icon;
+  final Color iconColor;
+  final String label;
+  final String name;
+  final String subtitle;
+  const _SedeRow({
+    required this.icon,
+    required this.iconColor,
+    required this.label,
+    required this.name,
+    required this.subtitle,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Row(
+      children: [
+        Container(
+          width: 38,
+          height: 38,
+          decoration: BoxDecoration(
+            color: iconColor.withValues(alpha: 0.14),
+            borderRadius: BorderRadius.circular(10),
+          ),
+          child: Icon(icon, color: iconColor, size: 20),
+        ),
+        const SizedBox(width: 12),
+        Expanded(
+          child: Column(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Text(
+                label.toUpperCase(),
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 10,
+                  fontWeight: FontWeight.w700,
+                  letterSpacing: 1.0,
+                ),
+              ),
+              const SizedBox(height: 2),
+              Text(
+                name,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurface,
+                  fontWeight: FontWeight.w700,
+                  fontSize: 15,
+                ),
+              ),
+              Text(
+                subtitle,
+                maxLines: 1,
+                overflow: TextOverflow.ellipsis,
+                style: TextStyle(
+                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  fontSize: 12,
+                ),
+              ),
+            ],
+          ),
+        ),
+      ],
     );
   }
 }
@@ -290,10 +418,10 @@ class _InfoNote extends StatelessWidget {
   Widget build(BuildContext context) {
     return Row(
       children: [
-        const Icon(
+        Icon(
           Icons.info_outline_rounded,
           size: 18,
-          color: KeeperColors.textSecondary,
+          color: Theme.of(context).colorScheme.onSurfaceVariant,
         ),
         const SizedBox(width: 10),
         Expanded(

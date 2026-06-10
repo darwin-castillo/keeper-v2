@@ -1,41 +1,40 @@
 import 'package:flutter/material.dart';
 
 /// Keeper brand palette.
-///
-/// Dark-mode dominant, high contrast, optimized for readability under
-/// direct sunlight and for battery saving on OLED screens.
 abstract final class KeeperColors {
   // --- Brand / Primary ---------------------------------------------------
-  /// Tech Purple — the signature Keeper accent.
-  static const Color primary = Color(0xFF5319F4);
-  static const Color primaryBright = Color(0xFF8C7BFF);
-  static const Color primaryDark = Color(0xFF3A0FB0);
+  /// Blue — the signature Keeper accent.
+  static const Color primary = Color(0xFF2A64F4);
+  static const Color primaryBright = Color(0xFF6B9AFF);
+  static const Color primaryDark = Color(0xFF1A45C4);
 
-  /// Lavender — soft purple used for confirmation buttons (FINISH OPERATION).
-  static const Color lavender = Color(0xFFB9A8FF);
+  /// Soft blue used for confirmation buttons (FINISH OPERATION).
+  static const Color lavender = Color(0xFFA8C0FF);
 
-  // --- Neutral backgrounds (deep, slightly cool black + dark greys) ------
-  /// Deep, slightly cool near-black scaffold background.
-  static const Color background = Color(0xFF0B0D11);
+  // --- Light mode (default) -----------------------------------------------
+  static const Color background = Color(0xFFF4F5F9);
+  static const Color surface = Color(0xFFFFFFFF);
+  static const Color surfaceHigh = Color(0xFFEDEEF2);
+  static const Color border = Color(0xFFD8DAE0);
+  static const Color textPrimary = Color(0xFF111827);
+  static const Color textSecondary = Color(0xFF6B7280);
+  static const Color textDisabled = Color(0xFF9CA3AF);
 
-  /// Elevated surface (cards, sheets).
-  static const Color surface = Color(0xFF161922);
-
-  /// Higher elevation surface / inputs.
-  static const Color surfaceHigh = Color(0xFF1E2230);
-
-  /// Hairline borders / dividers.
-  static const Color border = Color(0xFF2A2F3D);
-
-  // --- Text --------------------------------------------------------------
-  static const Color textPrimary = Color(0xFFF5F5F7);
-  static const Color textSecondary = Color(0xFFA0A0AD);
-  static const Color textDisabled = Color(0xFF5A5A66);
+  // --- Dark mode ----------------------------------------------------------
+  static const Color darkBackground = Color(0xFF0B0D11);
+  static const Color darkSurface = Color(0xFF161922);
+  static const Color darkSurfaceHigh = Color(0xFF1E2230);
+  static const Color darkBorder = Color(0xFF2A2F3D);
+  static const Color darkTextPrimary = Color(0xFFF5F5F7);
+  static const Color darkTextSecondary = Color(0xFFA0A0AD);
+  static const Color darkTextDisabled = Color(0xFF5A5A66);
 
   // --- State colors (combinable) -----------------------------------------
   /// Neon spring green — success / completed / checks / live status.
-  static const Color success = Color(0xFF2EDF8F);
-  static const Color successDark = Color(0xFF0E9C5C);
+  //static const Color success = Color(0xFF2EDF8F);
+  //static const Color successDark = Color(0xFF0E9C5C);
+  static const Color success = Color(0xFF2A64F4);
+  static const Color successDark = Color(0xFF1A45C4);
 
   /// Golden amber — pending / warnings / next stop / navigate.
   static const Color warning = Color(0xFFF4B740);

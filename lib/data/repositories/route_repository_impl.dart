@@ -39,4 +39,14 @@ class RouteRepositoryImpl implements RouteRepository {
   Future<void> clearRoute() async {
     await _local.deleteActiveRoute();
   }
+
+  @override
+  Future<void> saveCompletedRoute(RouteModel route) async {
+    await _local.addCompletedRoute(route.toMap());
+  }
+
+  @override
+  Future<List<RouteModel>> getCompletedRoutes(String driverId) async {
+    return _local.readCompletedRoutes().map(RouteModel.fromMap).toList();
+  }
 }
