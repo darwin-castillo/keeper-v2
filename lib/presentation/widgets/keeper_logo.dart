@@ -12,6 +12,10 @@ class KeeperLogo extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     if (showWordmark) {
+      final isDark = Theme.of(context).brightness == Brightness.dark;
+      final asset = isDark
+          ? 'assets/images/logo_keeper.png'
+          : 'assets/images/logo_keeper_nbg.png';
       return Container(
         padding: EdgeInsets.all(size * 0.12),
         decoration: BoxDecoration(
@@ -19,7 +23,7 @@ class KeeperLogo extends StatelessWidget {
           borderRadius: BorderRadius.circular(16),
         ),
         child: Image.asset(
-          'assets/images/logo_keeper.png',
+          asset,
           height: size,
           fit: BoxFit.contain,
         ),

@@ -30,6 +30,12 @@ class SedeModel {
   /// Timestamp the driver checked in (for sync/audit).
   final DateTime? checkedInAt;
 
+  /// Optional incident note recorded when completing the sede.
+  final String? incident;
+
+  /// Timestamp the driver completed this sede.
+  final DateTime? completedAt;
+
   const SedeModel({
     required this.id,
     required this.name,
@@ -42,6 +48,8 @@ class SedeModel {
     this.status = SedeStatus.pending,
     this.packages = const [],
     this.checkedInAt,
+    this.incident,
+    this.completedAt,
   });
 
   // --- Derived helpers ---------------------------------------------------
@@ -69,6 +77,8 @@ class SedeModel {
     SedeStatus? status,
     List<PackageModel>? packages,
     DateTime? checkedInAt,
+    String? incident,
+    DateTime? completedAt,
   }) {
     return SedeModel(
       id: id,
@@ -82,6 +92,8 @@ class SedeModel {
       status: status ?? this.status,
       packages: packages ?? this.packages,
       checkedInAt: checkedInAt ?? this.checkedInAt,
+      incident: incident ?? this.incident,
+      completedAt: completedAt ?? this.completedAt,
     );
   }
 
@@ -96,12 +108,14 @@ class SedeModel {
         'status': status.key,
         'checkInQrCode': checkInQrCode,
         'checkedInAt': checkedInAt?.toIso8601String(),
+        'incident': incident,
+        'completedAt': completedAt?.toIso8601String(),
         'packages': packages.map((p) => p.toMap()).toList(),
       };
 
   factory SedeModel.fromMap(Map<String, dynamic> map) => SedeModel(
         id: map['id'] as String,
-        name: map['name'] as String,
+        name: (map['name'] as String?) ?? '',
         address: (map['address'] as String?) ?? '',
         order: (map['order'] as num?)?.toInt() ?? 0,
         latitude: (map['latitude'] as num?)?.toDouble() ?? 0,
@@ -113,6 +127,10 @@ class SedeModel {
         checkedInAt: map['checkedInAt'] == null
             ? null
             : DateTime.tryParse(map['checkedInAt'] as String),
+        incident: map['incident'] as String?,
+        completedAt: map['completedAt'] == null
+            ? null
+            : DateTime.tryParse(map['completedAt'] as String),
         packages: ((map['packages'] as List?) ?? [])
             .map((e) => PackageModel.fromMap(
                 Map<String, dynamic>.from(e as Map)))

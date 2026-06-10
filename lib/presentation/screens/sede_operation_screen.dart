@@ -6,12 +6,14 @@ import '../../core/errors/keeper_exception.dart';
 import '../../core/theme/keeper_colors.dart';
 import '../../core/utils/formatters.dart';
 import '../../core/utils/snack.dart';
+import '../../data/models/package_model.dart';
 import '../../data/models/sede_model.dart';
 import '../providers/route_provider.dart';
 import '../widgets/keeper_logo.dart';
 import '../widgets/package_tile.dart';
 import '../widgets/scan_capture_page.dart';
 import '../widgets/scanner_view.dart';
+import 'sede_close_out_screen.dart';
 
 /// "Entrega / Retiro de Paquetes" — on-site operation at a sede.
 ///
@@ -113,6 +115,9 @@ class _OperationViewState extends State<_OperationView> {
   /// Last confirmation message shown as a green toast over the scanner.
   String? _toast;
 
+  /// Current scan mode: 'comprobante' or 'paquete'.
+  String _scanMode = 'comprobante';
+
   void _showToast(String message) {
     setState(() => _toast = message);
     Future.delayed(const Duration(milliseconds: 1800), () {
@@ -122,6 +127,16 @@ class _OperationViewState extends State<_OperationView> {
 
   Future<void> _onScan(BuildContext context, String code) async {
     final provider = context.read<RouteProvider>();
+    if (_scanMode == 'comprobante') {
+      provider.setCurrentComprobante(code);
+      setState(() => _scanMode = 'paquete');
+      _showToast('Comprobante $code activo');
+      return;
+    }
+    if (provider.currentComprobanteCode == null) {
+      Snack.error(context, 'Primero escanea un comprobante');
+      return;
+    }
     try {
       final result = await provider.scanPackageInSede(code);
       if (!context.mounted) return;
@@ -212,16 +227,64 @@ class _OperationViewState extends State<_OperationView> {
     }
   }
 
-  Future<void> _complete(BuildContext context) async {
-    final provider = context.read<RouteProvider>();
-    try {
-      await provider.completeCurrentSede();
-      if (!context.mounted) return;
-      Snack.success(context, 'Sede completada');
-      Navigator.of(context).pop();
-    } on KeeperException catch (e) {
-      if (context.mounted) Snack.error(context, e.message);
+  List<Widget> _buildGroupedDeliveries(List<PackageModel> deliveries) {
+    final grouped = <String?, List<PackageModel>>{};
+    for (final p in deliveries) {
+      grouped.putIfAbsent(p.comprobanteCode, () => []).add(p);
     }
+    final sortedKeys = grouped.keys.toList()
+      ..sort((a, b) {
+        if (a == null && b == null) return 0;
+        if (a == null) return 1;
+        if (b == null) return -1;
+        return a.compareTo(b);
+      });
+    final tiles = <Widget>[];
+    for (final key in sortedKeys) {
+      final pkgs = grouped[key]!;
+      final label = key ?? 'Sin comprobante';
+      final scanned = pkgs.where((p) => p.isScanned).length;
+      tiles.add(Padding(
+        padding: const EdgeInsets.only(top: 2, bottom: 4),
+        child: Row(
+          children: [
+            Icon(Icons.receipt_rounded,
+                size: 14, color: Theme.of(context).colorScheme.onSurfaceVariant),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+            const Spacer(),
+            Text(
+              '$scanned/${pkgs.length}',
+              style: TextStyle(
+                fontSize: 11,
+                fontWeight: FontWeight.w600,
+                color: Theme.of(context).colorScheme.onSurfaceVariant,
+              ),
+            ),
+          ],
+        ),
+      ));
+      for (final p in pkgs) {
+        tiles.add(Padding(
+          padding: const EdgeInsets.only(left: 8),
+          child: PackageTile(package: p, checked: p.isScanned),
+        ));
+      }
+    }
+    return tiles;
+  }
+
+  Future<void> _complete(BuildContext context) async {
+    Navigator.of(context).push(
+      MaterialPageRoute(builder: (_) => const SedeCloseOutScreen()),
+    );
   }
 
   @override
@@ -291,18 +354,45 @@ class _OperationViewState extends State<_OperationView> {
                               ),
                             ),
                           ],
-                        ),
-                      ),
-                    ),
-                  ),
-                ),
-              ],
-            ),
           ),
         ),
-        // --- Sede header ---------------------------------------------
-        Padding(
-          padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
+      ),
+    ),
+    ),
+    ],
+  ),
+),
+),
+    // --- Mode toggle + active comprobante ------------------------
+    Padding(
+      padding: const EdgeInsets.fromLTRB(16, 12, 16, 0),
+      child: Row(
+        children: [
+          _ModeChip(
+            label: 'Comprobante',
+            icon: Icons.receipt_rounded,
+            selected: _scanMode == 'comprobante',
+            onTap: () => setState(() => _scanMode = 'comprobante'),
+          ),
+          const SizedBox(width: 8),
+          _ModeChip(
+            label: 'Paquete',
+            icon: Icons.inventory_2_rounded,
+            selected: _scanMode == 'paquete',
+            onTap: () => setState(() => _scanMode = 'paquete'),
+          ),
+          const Spacer(),
+          if (provider.currentComprobanteCode case final c?)
+            _ActiveComprobanteChip(
+              code: c,
+              onClear: provider.clearCurrentComprobante,
+            ),
+        ],
+      ),
+    ),
+    // --- Sede header ---------------------------------------------
+    Padding(
+      padding: const EdgeInsets.fromLTRB(16, 16, 16, 0),
           child: Row(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
@@ -365,9 +455,7 @@ class _OperationViewState extends State<_OperationView> {
                       '${deliveries.where((p) => p.isScanned).length}/${deliveries.length}',
                 ),
                 const SizedBox(height: 10),
-                ...deliveries.map(
-                  (p) => PackageTile(package: p, checked: p.isScanned),
-                ),
+                ..._buildGroupedDeliveries(deliveries),
                 const SizedBox(height: 10),
               ],
               if (live.operationType.allowsPickup) ...[
@@ -440,6 +528,106 @@ class _SectionHeader extends StatelessWidget {
           style: TextStyle(color: color, fontWeight: FontWeight.w700),
         ),
       ],
+    );
+  }
+}
+
+class _ModeChip extends StatelessWidget {
+  final String label;
+  final IconData icon;
+  final bool selected;
+  final VoidCallback onTap;
+  const _ModeChip({
+    required this.label,
+    required this.icon,
+    required this.selected,
+    required this.onTap,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    final bg = selected
+        ? Theme.of(context).colorScheme.primaryContainer
+        : Theme.of(context).colorScheme.surfaceContainerHighest;
+    final fg = selected
+        ? Theme.of(context).colorScheme.onPrimaryContainer
+        : Theme.of(context).colorScheme.onSurfaceVariant;
+    return GestureDetector(
+      onTap: onTap,
+      child: Container(
+        padding: const EdgeInsets.symmetric(horizontal: 12, vertical: 6),
+        decoration: BoxDecoration(
+          color: bg,
+          borderRadius: BorderRadius.circular(20),
+          border: selected
+              ? Border.all(
+                  color: Theme.of(context).colorScheme.primary, width: 1.5)
+              : null,
+        ),
+        child: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Icon(icon, size: 16, color: fg),
+            const SizedBox(width: 6),
+            Text(
+              label,
+              style: TextStyle(
+                fontSize: 13,
+                fontWeight: FontWeight.w700,
+                color: fg,
+              ),
+            ),
+          ],
+        ),
+      ),
+    );
+  }
+}
+
+class _ActiveComprobanteChip extends StatelessWidget {
+  final String code;
+  final VoidCallback onClear;
+  const _ActiveComprobanteChip({
+    required this.code,
+    required this.onClear,
+  });
+
+  @override
+  Widget build(BuildContext context) {
+    return Container(
+      padding: const EdgeInsets.only(left: 10, right: 4, top: 4, bottom: 4),
+      decoration: BoxDecoration(
+        color: Theme.of(context).colorScheme.primaryContainer,
+        borderRadius: BorderRadius.circular(20),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(Icons.receipt_rounded,
+              size: 14,
+              color: Theme.of(context).colorScheme.onPrimaryContainer),
+          const SizedBox(width: 4),
+          Text(
+            code,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: Theme.of(context).colorScheme.onPrimaryContainer,
+            ),
+          ),
+          const SizedBox(width: 2),
+          IconButton(
+            icon: Icon(Icons.close_rounded,
+                size: 16,
+                color: Theme.of(context).colorScheme.onPrimaryContainer),
+            onPressed: onClear,
+            padding: EdgeInsets.zero,
+            constraints: const BoxConstraints(minWidth: 24, minHeight: 24),
+            splashRadius: 12,
+            tooltip: 'Limpiar comprobante',
+          ),
+        ],
+      ),
     );
   }
 }

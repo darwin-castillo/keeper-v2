@@ -39,6 +39,7 @@ class RouteProvider extends ChangeNotifier {
   String? _error;
   DateTime? _lastSync;
   List<RouteModel> _completedRoutes = [];
+  String? _currentComprobanteCode;
 
   // --- Read-only state ---------------------------------------------------
   RouteModel? get route => _route;
@@ -46,6 +47,7 @@ class RouteProvider extends ChangeNotifier {
   String? get error => _error;
   DateTime? get lastSync => _lastSync;
   List<RouteModel> get completedRoutes => _completedRoutes;
+  String? get currentComprobanteCode => _currentComprobanteCode;
 
   RouteStatus get status => _route?.status ?? RouteStatus.enBase;
   List<SedeModel> get sedes => _route?.sedes ?? const [];
@@ -106,6 +108,18 @@ class RouteProvider extends ChangeNotifier {
       _isLoading = false;
       notifyListeners();
     }
+  }
+
+  /// Sets the active comprobante for subsequent package scans.
+  void setCurrentComprobante(String code) {
+    _currentComprobanteCode = code.trim();
+    notifyListeners();
+  }
+
+  /// Clears the active comprobante.
+  void clearCurrentComprobante() {
+    _currentComprobanteCode = null;
+    notifyListeners();
   }
 
   // --- Business methods --------------------------------------------------
@@ -201,7 +215,11 @@ class RouteProvider extends ChangeNotifier {
       if (delivery.isScanned) return SedeScanResult.alreadyScanned;
       final updatedPackages = sede.packages
           .map((p) => p.id == delivery.id
-              ? p.copyWith(isScanned: true, scannedAt: DateTime.now())
+              ? p.copyWith(
+                  isScanned: true,
+                  scannedAt: DateTime.now(),
+                  comprobanteCode: _currentComprobanteCode,
+                )
               : p)
           .toList();
       await _commit(_replaceSede(
@@ -242,21 +260,27 @@ class RouteProvider extends ChangeNotifier {
       isScanned: true,
       scannedAt: DateTime.now(),
       pendingSync: true,
+      comprobanteCode: _currentComprobanteCode,
     );
     final updated = sede.copyWith(packages: [...sede.packages, pkg]);
     await _commit(_replaceSede(route, updated, pendingSync: true));
   }
 
   /// Marks the current sede as completed and advances to the next pending one.
-  Future<void> completeCurrentSede() async {
+  /// Optionally records an [incident] note and the completion timestamp.
+  Future<void> completeCurrentSede({String? incident}) async {
     final route = _requireRoute();
     if (!canCompleteCurrentSede) {
       throw const KeeperException(
           'Aún hay entregas pendientes en esta sede.');
     }
     final sede = route.currentSede!;
-    var updated =
-        _replaceSede(route, sede.copyWith(status: SedeStatus.completed));
+    final completedAt = DateTime.now();
+    var updated = _replaceSede(route, sede.copyWith(
+      status: SedeStatus.completed,
+      incident: incident?.trim().isEmpty != true ? incident : null,
+      completedAt: completedAt,
+    ));
 
     // Advance to the next pending sede (strict order).
     final nextIndex = updated.sedes.indexWhere(

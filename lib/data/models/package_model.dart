@@ -39,6 +39,9 @@ class PackageModel {
   /// True if created offline and pending sync to the backend.
   final bool pendingSync;
 
+  /// Comprobante (receipt/document) this package was scanned under.
+  final String? comprobanteCode;
+
   const PackageModel({
     required this.id,
     required this.code,
@@ -51,6 +54,7 @@ class PackageModel {
     this.isScanned = false,
     this.scannedAt,
     this.pendingSync = false,
+    this.comprobanteCode,
   });
 
   PackageModel copyWith({
@@ -61,6 +65,7 @@ class PackageModel {
     bool? isScanned,
     DateTime? scannedAt,
     bool? pendingSync,
+    String? comprobanteCode,
   }) {
     return PackageModel(
       id: id,
@@ -74,6 +79,7 @@ class PackageModel {
       isScanned: isScanned ?? this.isScanned,
       scannedAt: scannedAt ?? this.scannedAt,
       pendingSync: pendingSync ?? this.pendingSync,
+      comprobanteCode: comprobanteCode ?? this.comprobanteCode,
     );
   }
 
@@ -89,6 +95,7 @@ class PackageModel {
     'isScanned': isScanned,
     'scannedAt': scannedAt?.toIso8601String(),
     'pendingSync': pendingSync,
+    'comprobanteCode': comprobanteCode,
   };
 
   factory PackageModel.fromMap(Map<String, dynamic> map) => PackageModel(
@@ -105,6 +112,7 @@ class PackageModel {
         ? null
         : DateTime.tryParse(map['scannedAt'] as String),
     pendingSync: (map['pendingSync'] as bool?) ?? false,
+    comprobanteCode: map['comprobanteCode'] as String?,
   );
 
   @override
