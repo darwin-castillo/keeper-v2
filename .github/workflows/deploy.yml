@@ -18,6 +18,8 @@ jobs:
           flutter-version: '3.44.0'
       - run: flutter build web --base-href /keeper-v2/
       - uses: actions/configure-pages@v5
+        with:
+          enablement: true
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
