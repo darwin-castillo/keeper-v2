@@ -388,7 +388,7 @@ class _AccountTab extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Text(auth.driverName ?? 'Operador',
+                      Text(auth.driverName ?? 'Porta Valor',
                           style: Theme.of(context).textTheme.titleLarge),
                       const SizedBox(height: 2),
                       Text('ID: ${auth.driverId ?? '—'}',

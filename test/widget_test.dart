@@ -11,7 +11,7 @@ void main() {
     await tester.pumpWidget(const KeeperApp());
     await tester.pumpAndSettle();
 
-    expect(find.text('Acceso de operador'), findsOneWidget);
+    expect(find.text('Acceso de Porta Valor'), findsOneWidget);
     expect(find.text('Iniciar sesión'), findsOneWidget);
   });
 }

@@ -49,7 +49,7 @@ class StatusPill extends StatelessWidget {
       RouteStatus.enBase => KeeperColors.primary,
       RouteStatus.rutaVerificada => KeeperColors.primaryBright,
       RouteStatus.rutaIniciada => KeeperColors.primaryBright,
-      RouteStatus.rutaPorFinalizar => KeeperColors.warning,
+      RouteStatus.rutaPorFinalizar => KeeperColors.primary,
       RouteStatus.finalizada => KeeperColors.success,
     };
     return StatusPill(label: status.code, color: color, dot: true);

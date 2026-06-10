@@ -51,6 +51,28 @@ class RouteStatusScreen extends StatelessWidget {
             child: Center(child: StatusPill.route(route.status)),
           ),
         ],
+        bottom: route.status == RouteStatus.rutaIniciada
+            ? PreferredSize(
+                preferredSize: const Size.fromHeight(32),
+                child: Padding(
+                  padding: const EdgeInsets.only(
+                    left: 16,
+                    right: 16,
+                    bottom: 10,
+                  ),
+                  child: Row(
+                    children: [
+                      _TagChip(icon: Icons.route_rounded, label: route.code),
+                      const SizedBox(width: 8),
+                      _TagChip(
+                        icon: Icons.person_rounded,
+                        label: 'Porta Valor: ${auth.driverName ?? '—'}',
+                      ),
+                    ],
+                  ),
+                ),
+              )
+            : null,
       ),
       body: Column(
         children: [
@@ -58,6 +80,7 @@ class RouteStatusScreen extends StatelessWidget {
             route: route,
             driverName: auth.driverName ?? '—',
             lastSync: provider.lastSync,
+            isActive: route.status == RouteStatus.rutaIniciada,
           ),
           Expanded(
             child: ListView.builder(
@@ -109,14 +132,17 @@ class _RouteInfoBanner extends StatelessWidget {
   final RouteModel route;
   final String driverName;
   final DateTime? lastSync;
+  final bool isActive;
   const _RouteInfoBanner({
     required this.route,
     required this.driverName,
     required this.lastSync,
+    this.isActive = false,
   });
 
   @override
   Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
     final total = route.sedes.length;
     final done = route.completedSedesCount;
     final pct = total == 0 ? 0 : ((done / total) * 100).round();
@@ -127,9 +153,13 @@ class _RouteInfoBanner extends StatelessWidget {
       child: Container(
         padding: const EdgeInsets.all(14),
         decoration: BoxDecoration(
-          color: Theme.of(context).colorScheme.surface,
+          color: isActive ? KeeperColors.primaryDark : cs.surface,
           borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: Theme.of(context).colorScheme.outline),
+          border: Border.all(
+            color: isActive
+                ? KeeperColors.primaryDark.withValues(alpha: 0.3)
+                : cs.outline,
+          ),
         ),
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
@@ -143,20 +173,20 @@ class _RouteInfoBanner extends StatelessWidget {
                 ),
                 const SizedBox(width: 6),
                 Text(
-                  route.code,
+                  "Ruta Av. Central - ${route.code}",
                   style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 14,
-                    color: Theme.of(context).colorScheme.onSurface,
+                    fontSize: 16,
+                    color: isActive ? Colors.white : cs.onSurface,
                   ),
                 ),
                 const Spacer(),
                 Text(
                   '$pct%',
-                  style: const TextStyle(
+                  style: TextStyle(
                     fontWeight: FontWeight.w700,
-                    fontSize: 13,
-                    color: KeeperColors.primaryBright,
+                    fontSize: 16,
+                    color: isActive ? Colors.white : KeeperColors.primaryBright,
                   ),
                 ),
               ],
@@ -165,29 +195,19 @@ class _RouteInfoBanner extends StatelessWidget {
             Row(
               children: [
                 Icon(
-                  Icons.person_rounded,
-                  size: 13,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
-                ),
-                const SizedBox(width: 4),
-                Text(
-                  driverName,
-                  style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
-                    fontSize: 12,
-                  ),
-                ),
-                const SizedBox(width: 16),
-                Icon(
                   Icons.sync_rounded,
                   size: 13,
-                  color: Theme.of(context).colorScheme.onSurfaceVariant,
+                  color: isActive
+                      ? Colors.white.withValues(alpha: 0.7)
+                      : cs.onSurfaceVariant,
                 ),
                 const SizedBox(width: 4),
                 Text(
                   'Última sync: $syncText',
                   style: TextStyle(
-                    color: Theme.of(context).colorScheme.onSurfaceVariant,
+                    color: isActive
+                        ? Colors.white.withValues(alpha: 0.7)
+                        : cs.onSurfaceVariant,
                     fontSize: 12,
                   ),
                 ),
@@ -424,6 +444,39 @@ class _NodeStatusLine extends StatelessWidget {
             ),
           ),
       ],
+    );
+  }
+}
+
+class _TagChip extends StatelessWidget {
+  final IconData icon;
+  final String label;
+  const _TagChip({required this.icon, required this.label});
+
+  @override
+  Widget build(BuildContext context) {
+    final cs = Theme.of(context).colorScheme;
+    return Container(
+      padding: const EdgeInsets.symmetric(horizontal: 10, vertical: 4),
+      decoration: BoxDecoration(
+        color: cs.primaryContainer,
+        borderRadius: BorderRadius.circular(8),
+      ),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Icon(icon, size: 13, color: cs.onPrimaryContainer),
+          const SizedBox(width: 4),
+          Text(
+            label,
+            style: TextStyle(
+              fontSize: 12,
+              fontWeight: FontWeight.w700,
+              color: cs.onPrimaryContainer,
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

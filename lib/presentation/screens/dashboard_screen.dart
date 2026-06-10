@@ -50,10 +50,10 @@ class DashboardScreen extends StatelessWidget {
               child: ListView(
                 padding: const EdgeInsets.fromLTRB(16, 12, 16, 24),
                 children: [
-                  const _SectionLabel('Sesión de operador'),
+                  const _SectionLabel('Porta Valor'),
                   const SizedBox(height: 6),
                   Text(
-                    'Bienvenido, ${auth.driverName ?? 'Operador'}',
+                    'Bienvenido, ${auth.driverName ?? 'Porta Valor'}',
                     style: Theme.of(context).textTheme.headlineSmall,
                   ),
                   const SizedBox(height: 22),

@@ -53,7 +53,7 @@ class _LoginScreenState extends State<LoginScreen> {
                 const Center(child: KeeperLogo(size: 64)),
                 const SizedBox(height: 40),
                 Text(
-                  'Acceso de operador',
+                  'Acceso de Porta Valor',
                   style: Theme.of(context).textTheme.headlineSmall,
                 ),
                 const SizedBox(height: 6),
@@ -66,7 +66,7 @@ class _LoginScreenState extends State<LoginScreen> {
                   controller: _userCtrl,
                   textInputAction: TextInputAction.next,
                   decoration: const InputDecoration(
-                    labelText: 'Usuario / ID de operador',
+                    labelText: 'ID de Porta Valor',
                     prefixIcon: Icon(Icons.badge_rounded),
                   ),
                 ),

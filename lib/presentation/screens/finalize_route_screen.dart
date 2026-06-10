@@ -39,12 +39,21 @@ class FinalizeRouteScreen extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final provider = context.watch<RouteProvider>();
-    final route = provider.route!;
+    final route = provider.route;
+    if (route == null) {
+      return const Scaffold(
+        body: Center(child: CircularProgressIndicator()),
+      );
+    }
     final finalized = route.status == RouteStatus.finalizada;
-    final pickupTotal =
-        route.sedes.fold<double>(0, (s, sede) => s + sede.pickupTotal);
-    final deliveredTotal =
-        route.sedes.fold<double>(0, (s, sede) => s + sede.deliveredTotal);
+    final pickupTotal = route.sedes.fold<double>(
+      0,
+      (s, sede) => s + sede.pickupTotal,
+    );
+    final deliveredTotal = route.sedes.fold<double>(
+      0,
+      (s, sede) => s + sede.deliveredTotal,
+    );
 
     return Scaffold(
       appBar: AppBar(title: const Text('Finalizar ruta')),
@@ -56,12 +65,10 @@ class FinalizeRouteScreen extends StatelessWidget {
             child: Row(
               children: [
                 Icon(
-                  finalized
-                      ? Icons.task_alt_rounded
-                      : Icons.flag_rounded,
+                  finalized ? Icons.task_alt_rounded : Icons.flag_rounded,
                   color: finalized
-                      ? KeeperColors.success
-                      : KeeperColors.warning,
+                      ? KeeperColors.primaryDark
+                      : KeeperColors.primaryBright,
                   size: 40,
                 ),
                 const SizedBox(width: 14),
@@ -70,9 +77,7 @@ class FinalizeRouteScreen extends StatelessWidget {
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
                       Text(
-                        finalized
-                            ? 'Ruta cerrada'
-                            : 'Listo para volver a base',
+                        finalized ? 'Ruta cerrada' : 'Listo para volver a base',
                         style: Theme.of(context).textTheme.titleLarge,
                       ),
                       const SizedBox(height: 4),
@@ -101,7 +106,7 @@ class FinalizeRouteScreen extends StatelessWidget {
                 child: _SummaryTile(
                   label: 'Retirado',
                   value: Formatters.currency(pickupTotal),
-                  color: KeeperColors.warning,
+                  color: KeeperColors.primaryDark,
                 ),
               ),
             ],
@@ -118,18 +123,23 @@ class FinalizeRouteScreen extends StatelessWidget {
                   children: [
                     CircleAvatar(
                       radius: 16,
-                      backgroundColor:
-                          Theme.of(context).colorScheme.surfaceContainerHighest,
-                      child: Text('${sede.order}',
-                          style: TextStyle(
-                            color: Theme.of(context).colorScheme.onSurface,
-                            fontWeight: FontWeight.w700,
-                          )),
+                      backgroundColor: Theme.of(
+                        context,
+                      ).colorScheme.surfaceContainerHighest,
+                      child: Text(
+                        '${sede.order}',
+                        style: TextStyle(
+                          color: Theme.of(context).colorScheme.onSurface,
+                          fontWeight: FontWeight.w700,
+                        ),
+                      ),
                     ),
                     const SizedBox(width: 12),
                     Expanded(
-                      child: Text(sede.name,
-                          style: Theme.of(context).textTheme.titleMedium),
+                      child: Text(
+                        sede.name,
+                        style: Theme.of(context).textTheme.titleMedium,
+                      ),
                     ),
                     StatusPill.sede(sede.status),
                   ],
@@ -145,10 +155,11 @@ class FinalizeRouteScreen extends StatelessWidget {
           child: ElevatedButton.icon(
             onPressed: finalized ? null : () => _finalize(context),
             icon: Icon(
-                finalized ? Icons.check_rounded : Icons.qr_code_scanner_rounded),
-            label: Text(finalized
-                ? 'Ruta finalizada'
-                : 'Escanear QR de cierre'),
+              finalized ? Icons.check_rounded : Icons.qr_code_scanner_rounded,
+            ),
+            label: Text(
+              finalized ? 'Ruta finalizada' : 'Escanear QR de cierre',
+            ),
           ),
         ),
       ),
@@ -175,12 +186,14 @@ class _SummaryTile extends StatelessWidget {
         children: [
           Text(label, style: Theme.of(context).textTheme.bodyMedium),
           const SizedBox(height: 6),
-          Text(value,
-              style: TextStyle(
-                color: color,
-                fontSize: 20,
-                fontWeight: FontWeight.w800,
-              )),
+          Text(
+            value,
+            style: TextStyle(
+              color: color,
+              fontSize: 20,
+              fontWeight: FontWeight.w800,
+            ),
+          ),
         ],
       ),
     );
