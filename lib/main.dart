@@ -1,5 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
+import 'package:flutter_web_plugins/url_strategy.dart'
+    show HashUrlStrategy, setUrlStrategy;
 import 'package:intl/date_symbol_data_local.dart';
 import 'package:provider/provider.dart';
 
@@ -18,6 +20,7 @@ Future<void> main() async {
   await KeeperLocalDataSource.init();
   await initializeDateFormatting('es_MX', null);
   SystemChrome.setSystemUIOverlayStyle(KeeperTheme.systemOverlay);
+  setUrlStrategy(const HashUrlStrategy());
   runApp(const KeeperApp());
 }
 
