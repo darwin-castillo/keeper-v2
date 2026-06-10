@@ -18,6 +18,10 @@ jobs:
           flutter-version: '3.44.0'
       - run: flutter build web --base-href /keeper-v2/
       - uses: actions/configure-pages@v5
+      - uses: actions/delete-artifact@v4
+        if: always()
+        with:
+          name: github-pages
       - uses: actions/upload-pages-artifact@v3
         with:
           path: build/web
